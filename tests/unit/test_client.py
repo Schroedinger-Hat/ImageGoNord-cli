@@ -12,11 +12,8 @@ def run_image_go_nord_script(*args):
     :param args: The arguments to pass directly to the script.
     """
 
-    script_path = str(Path.cwd() / 'src' / 'cli.py')
-    os.path.join(os.path.dirname(__file__), "../src/image-go-nord")
-    return subprocess.check_output(
-        ["python", script_path, *args], universal_newlines=True
-    )
+    command = ["python", (str(Path.cwd() / 'src' / 'cli.py')), *args]
+    return " ".join(command), subprocess.check_output(command, universal_newlines=True)
 
 
 def is_image_empty(image_path):
@@ -49,16 +46,16 @@ class TestClient(unittest.TestCase):
         # Run the script with the image path input and output and check result
         with tempfile.TemporaryDirectory() as tmpdirname:
             output_path = Path(tmpdirname) / 'output.png'
-            script = run_image_go_nord_script(f'--img={self.blue_square_path}', f'--out={output_path}')
+            command, output = run_image_go_nord_script(f'--img={self.blue_square_path}', f'--out={output_path}')
 
             self.assertFalse(is_image_empty(output_path))
 
             self.assertTrue(
                 are_images_the_same(self.blue_nord_square_path, output_path),
-                "FAIL: The output image is NOT the same as the expected image {}".format(script),
+                f"FAIL: The output image is NOT the same as the expected image \n{command}",
             )
 
             self.assertFalse(
                 are_images_the_same(self.blue_square_path, output_path),
-                "FAIL: The output image IS the same as the expected image {}".format(script),
+                f"FAIL: The output image IS the same as the expected image \n{command}",
             )
