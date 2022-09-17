@@ -46,3 +46,11 @@ class ClientShould(unittest.TestCase):
                 f'-i={self.blue_square_path}',
                 f'-o={output_image_path}'
             )
+
+    def test_return_version_when_given_version_extended_parameter(self):
+        command, output = run_image_go_nord_client('--version')
+        self.assertEqual('0.1.0', output.strip())
+
+    def test_return_version_when_given_version_short_parameter(self):
+        command, output = run_image_go_nord_client('-v')
+        self.assertEqual('0.1.0', output.strip())
