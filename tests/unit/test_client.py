@@ -5,15 +5,13 @@ from pathlib import Path
 from tests.utils import run_image_go_nord_client, is_image_empty, are_images_the_same
 
 
-class TestClient(unittest.TestCase):
+class ClientShould(unittest.TestCase):
     # Get blue_suqare.png path from data folder
     data = Path(__file__).parent.parent / 'data'
     blue_square_path = data / 'blue_square.png'
     blue_nord_square_path = data / 'blue_nord_square.png'
 
-    def test_client_basic_conversion(self):
-        """Run image-go-nord script with only the image path input and output and check result"""
-
+    def test_convert_to_nord_palette_when_given_only_img_and_out_parameters_in_extended_version(self):
         # Create a temporary folder to store the output image
         # Run the script with the image path input and output and check result
         with tempfile.TemporaryDirectory() as tmpdirname:
