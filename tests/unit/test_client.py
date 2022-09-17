@@ -11,6 +11,18 @@ class ClientShould(unittest.TestCase):
     blue_square_path = data / 'blue_square.png'
     blue_nord_square_path = data / 'blue_nord_square.png'
 
+    def run_test(self, output_image_path, *args):
+        command, output = run_image_go_nord_client(*args)
+        self.assertFalse(is_image_empty(output_image_path))
+        self.assertTrue(
+            are_images_the_same(self.blue_nord_square_path, output_image_path),
+            f"FAIL: The output image is NOT the same as the expected image \n{command}",
+        )
+        self.assertFalse(
+            are_images_the_same(self.blue_square_path, output_image_path),
+            f"FAIL: The output image IS the same as the expected image \n{command}",
+        )
+
     def test_convert_to_nord_palette_when_given_only_img_and_out_parameters_in_extended_version(self):
         # Create a temporary folder to store the output image
         # Run the script with the image path input and output and check result
@@ -34,15 +46,3 @@ class ClientShould(unittest.TestCase):
                 f'-i={self.blue_square_path}',
                 f'-o={output_image_path}'
             )
-
-    def run_test(self, output_image_path, *args):
-        command, output = run_image_go_nord_client(*args)
-        self.assertFalse(is_image_empty(output_image_path))
-        self.assertTrue(
-            are_images_the_same(self.blue_nord_square_path, output_image_path),
-            f"FAIL: The output image is NOT the same as the expected image \n{command}",
-        )
-        self.assertFalse(
-            are_images_the_same(self.blue_square_path, output_image_path),
-            f"FAIL: The output image IS the same as the expected image \n{command}",
-        )
