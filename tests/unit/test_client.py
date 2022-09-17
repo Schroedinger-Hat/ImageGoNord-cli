@@ -11,6 +11,12 @@ class ClientShould(unittest.TestCase):
     blue_square_path = data / 'blue_square.png'
     blue_nord_square_path = data / 'blue_nord_square.png'
 
+    def tearDown(self) -> None:
+        # Delete the output image if exists
+        std_output_path = Path('nord.png')
+        if std_output_path.exists():
+            std_output_path.unlink()
+
     def run_test(self, output_image_path, *args):
         command, output = run_image_go_nord_client(*args)
         self.assertFalse(is_image_empty(output_image_path))
@@ -30,7 +36,6 @@ class ClientShould(unittest.TestCase):
         run_image_go_nord_client(f'--img={self.blue_square_path}')
         default_file_path = Path('nord.png')
         self.assertTrue(default_file_path.exists())
-        default_file_path.unlink()
 
     def test_return_version_when_given_version_extended_parameter(self):
         _, output = run_image_go_nord_client('--version')
@@ -50,7 +55,6 @@ class ClientShould(unittest.TestCase):
 
     def test_no_output_when_convert_to_nord_palette_and_quiet_extended_parameter_provided(self):
         _, output = run_image_go_nord_client(f'--img={self.blue_square_path}', '--quiet')
-        Path('nord.png').unlink()
         self.assertEqual('', output)
 
     def test_convert_to_nord_palette_when_given_only_img_in_extended_version(self):
@@ -58,7 +62,6 @@ class ClientShould(unittest.TestCase):
         run_image_go_nord_client(f'--img={self.blue_square_path}')
         default_file_path = Path('nord.png')
         self.assertTrue(default_file_path.exists())
-        default_file_path.unlink()
 
     def test_convert_to_nord_palette_when_given_only_img_and_out_parameters_in_extended_version(self):
         # Create a temporary folder to store the output image
