@@ -31,11 +31,13 @@ class ClientShould(unittest.TestCase):
 
         return output
 
-    def test_convert_to_nord_palette_when_given_only_img_in_short_version(self):
-        # Check if default file nord.png is created in the current directory
-        run_image_go_nord_client(f'--img={self.blue_square_path}')
-        default_file_path = Path('nord.png')
-        self.assertTrue(default_file_path.exists())
+    def test_return_docs_when_given_help_extended_parameter(self):
+        _, output = run_image_go_nord_client('--help')
+        self.assertTrue('ImageGoNord, a converter for a rgb images to norththeme palette' in output)
+
+    def test_return_docs_when_given_help_short_parameter(self):
+        _, output = run_image_go_nord_client('-h')
+        self.assertTrue('ImageGoNord, a converter for a rgb images to norththeme palette' in output)
 
     def test_return_version_when_given_version_extended_parameter(self):
         _, output = run_image_go_nord_client('--version')
@@ -45,17 +47,19 @@ class ClientShould(unittest.TestCase):
         _, output = run_image_go_nord_client('-v')
         self.assertEqual('0.1.0', output.strip())
 
-    def test_return_docs_when_given_help_extended_parameter(self):
-        _, output = run_image_go_nord_client('--help')
-        self.assertTrue('ImageGoNord, a converter for a rgb images to norththeme palette' in output)
-
-    def test_return_docs_when_given_help_short_parameter(self):
-        _, output = run_image_go_nord_client('-h')
-        self.assertTrue('ImageGoNord, a converter for a rgb images to norththeme palette' in output)
+    def test_no_output_when_convert_to_nord_palette_and_quiet_short_parameter_provided(self):
+        _, output = run_image_go_nord_client(f'-i={self.blue_square_path}', '-q')
+        self.assertEqual('', output)
 
     def test_no_output_when_convert_to_nord_palette_and_quiet_extended_parameter_provided(self):
         _, output = run_image_go_nord_client(f'--img={self.blue_square_path}', '--quiet')
         self.assertEqual('', output)
+
+    def test_convert_to_nord_palette_when_given_only_img_in_short_version(self):
+        # Check if default file nord.png is created in the current directory
+        run_image_go_nord_client(f'-i={self.blue_square_path}')
+        default_file_path = Path('nord.png')
+        self.assertTrue(default_file_path.exists())
 
     def test_convert_to_nord_palette_when_given_only_img_in_extended_version(self):
         # Check if default file nord.png is created in the current directory
