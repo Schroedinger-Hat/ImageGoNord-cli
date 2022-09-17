@@ -23,19 +23,36 @@ class ClientShould(unittest.TestCase):
             f"FAIL: The output image IS the same as the expected image \n{command}",
         )
 
+        return output
+
     def test_convert_to_nord_palette_when_given_only_img_in_short_version(self):
         # Check if default file nord.png is created in the current directory
-        command, output = run_image_go_nord_client(f'--img={self.blue_square_path}')
+        run_image_go_nord_client(f'--img={self.blue_square_path}')
         default_file_path = Path('nord.png')
         self.assertTrue(default_file_path.exists())
         default_file_path.unlink()
 
     def test_convert_to_nord_palette_when_given_only_img_in_extended_version(self):
         # Check if default file nord.png is created in the current directory
-        command, output = run_image_go_nord_client(f'--img={self.blue_square_path}')
+        run_image_go_nord_client(f'--img={self.blue_square_path}')
         default_file_path = Path('nord.png')
         self.assertTrue(default_file_path.exists())
         default_file_path.unlink()
+
+    def test_no_output_when_convert_to_nord_palette_and_quiet_extended_parameter_provided(self):
+        # Create a temporary folder to store the output image
+        # Run the script with the image path input and output and check result
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            output_image_path = Path(tmpdirname) / 'output.png'
+
+            output = self.run_test(
+                output_image_path,
+                f'--img={self.blue_square_path}',
+                f'--out={output_image_path}',
+                '--quiet'
+            )
+
+            self.assertEqual('', output)
 
     def test_convert_to_nord_palette_when_given_only_img_and_out_parameters_in_extended_version(self):
         # Create a temporary folder to store the output image
