@@ -25,10 +25,8 @@ Theme options:
                                     theme name it is possible to select it. If
                                     necessary you can specify the set of colors
                                     you want to use.
-                                    Ex: python src/cli.py --nord=aur,p,s is
-                                    possible to pass the name of the color or
-                                    the first character of the name set.
-                                    To use the Monokai theme use this command: python src/cli.py --monokai
+                                    Ex: python src/cli.py --nord=Aurora,PolarNight,SnowStorm
+                                    Ex: python src/cli.py --monokai
 
 Conversion:
 
