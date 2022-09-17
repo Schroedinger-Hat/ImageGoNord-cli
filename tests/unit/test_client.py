@@ -1,36 +1,8 @@
-import os
-import os.path
-import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
-
-def run_image_go_nord_script(*args):
-    """Run the image-go-nord script with the given arguments.
-
-    :param args: The arguments to pass directly to the script.
-    """
-
-    command = ["python", (str(Path.cwd() / 'src' / 'cli.py')), *args]
-    return " ".join(command), subprocess.check_output(command, universal_newlines=True)
-
-
-def is_image_empty(image_path):
-    """Check if an image is empty.
-
-    :param image_path: The path to the image.
-    """
-    return Path(image_path).stat().st_size == 0
-
-
-def are_images_the_same(image1_path, image2_path):
-    """Compare two images and return True if they are the same.
-
-    :param image1_path: The path to the first image.
-    :param image2_path: The path to the second image.
-    """
-    return Path(image1_path).read_bytes() == Path(image2_path).read_bytes()
+from tests.utils import run_image_go_nord_client, is_image_empty, are_images_the_same
 
 
 class TestClient(unittest.TestCase):
@@ -45,17 +17,17 @@ class TestClient(unittest.TestCase):
         # Create a temporary folder to store the output image
         # Run the script with the image path input and output and check result
         with tempfile.TemporaryDirectory() as tmpdirname:
-            output_path = Path(tmpdirname) / 'output.png'
-            command, output = run_image_go_nord_script(f'--img={self.blue_square_path}', f'--out={output_path}')
+            output_image_path = Path(tmpdirname) / 'output.png'
+            command, output = run_image_go_nord_client(f'--img={self.blue_square_path}', f'--out={output_image_path}')
 
-            self.assertFalse(is_image_empty(output_path))
+            self.assertFalse(is_image_empty(output_image_path))
 
             self.assertTrue(
-                are_images_the_same(self.blue_nord_square_path, output_path),
+                are_images_the_same(self.blue_nord_square_path, output_image_path),
                 f"FAIL: The output image is NOT the same as the expected image \n{command}",
             )
 
             self.assertFalse(
-                are_images_the_same(self.blue_square_path, output_path),
+                are_images_the_same(self.blue_square_path, output_image_path),
                 f"FAIL: The output image IS the same as the expected image \n{command}",
             )
