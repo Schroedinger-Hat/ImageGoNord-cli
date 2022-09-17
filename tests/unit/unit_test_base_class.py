@@ -5,8 +5,6 @@ from tests.utils import run_image_go_nord_client, is_image_empty, are_images_the
 
 
 class UnitTestBaseClass(unittest.TestCase):
-    input_image_path = None
-    expected_image_path = None
 
     def tearDown(self) -> None:
         # Delete the output image if exists
@@ -15,7 +13,7 @@ class UnitTestBaseClass(unittest.TestCase):
             std_output_path.unlink()
 
     def run_test(self, input_image_path, output_image_path, expected_image_path, *args):
-        assert self.input_image_path is not None, "The input_image_path is not set"
+        assert input_image_path is not None, "The input_image_path is not set"
         assert expected_image_path is not None, "The expected_image_path is not set"
         assert output_image_path is not None, "The output_image_path is not set"
 
@@ -26,7 +24,7 @@ class UnitTestBaseClass(unittest.TestCase):
             f"FAIL: The output image is NOT the same as the expected image \n{command}",
         )
         self.assertFalse(
-            are_images_the_same(self.input_image_path, output_image_path),
+            are_images_the_same(input_image_path, output_image_path),
             f"FAIL: The output image IS the same as the expected image \n{command}",
         )
 
