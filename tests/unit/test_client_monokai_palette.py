@@ -17,7 +17,9 @@ class ClientShould(UnitTestBaseClass):
             output_image_path = Path(tmpdirname) / 'blue_monokai_square.png'
 
             self.run_test(
+                self.input_image_path,
                 output_image_path,
+                self.expected_image_path,
                 f'-i={self.input_image_path}',
                 f'-o={output_image_path}',
                 '--monokai'
