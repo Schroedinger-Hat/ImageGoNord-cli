@@ -51,7 +51,7 @@ class ClientShould(UnitTestBaseClass):
         # Create a temporary folder to store the output image
         # Run the script with the image path input and output and check result
         with tempfile.TemporaryDirectory() as tmpdirname:
-            output_image_path = Path(tmpdirname) / 'blue_monokai_square.png'
+            output_image_path = Path(tmpdirname) / 'output.png'
 
             self.run_test(
                 output_image_path,
@@ -63,7 +63,7 @@ class ClientShould(UnitTestBaseClass):
         # Create a temporary folder to store the output image
         # Run the script with the image path input and output and check result
         with tempfile.TemporaryDirectory() as tmpdirname:
-            output_image_path = Path(tmpdirname) / 'blue_monokai_square.png'
+            output_image_path = Path(tmpdirname) / 'output.png'
 
             self.run_test(
                 output_image_path,
