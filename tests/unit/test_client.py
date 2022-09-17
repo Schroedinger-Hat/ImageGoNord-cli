@@ -79,17 +79,17 @@ class ClientShould(unittest.TestCase):
             )
 
     def test_return_version_when_given_version_extended_parameter(self):
-        command, output = run_image_go_nord_client('--version')
+        _, output = run_image_go_nord_client('--version')
         self.assertEqual('0.1.0', output.strip())
 
     def test_return_version_when_given_version_short_parameter(self):
-        command, output = run_image_go_nord_client('-v')
+        _, output = run_image_go_nord_client('-v')
         self.assertEqual('0.1.0', output.strip())
 
     def test_return_docs_when_given_help_extended_parameter(self):
-        command, output = run_image_go_nord_client('--help')
+        _, output = run_image_go_nord_client('--help')
         self.assertTrue('ImageGoNord, a converter for a rgb images to norththeme palette' in output)
 
     def test_return_docs_when_given_help_short_parameter(self):
-        command, output = run_image_go_nord_client('-h')
+        _, output = run_image_go_nord_client('-h')
         self.assertTrue('ImageGoNord, a converter for a rgb images to norththeme palette' in output)
