@@ -1,0 +1,27 @@
+{
+    "files.autoSave": "afterDelay",
+    "files.autoSaveDelay": 400,
+    "editor.formatOnSave": true,
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+    },
+    "python.envFile": "${workspaceFolder}/.env",
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestEnabled": true,
+    "python.testing.cwd": "${workspaceFolder}",
+    "python.testing.autoTestDiscoverOnSaveEnabled": true,
+    "terminal.integrated.env.osx": {
+        "PYTHONIOENCODING": "utf-8",
+        "PYTHONPATH": "${workspaceFolder}/src:${workspaceFolder}/tests"
+    },
+    "python.analysis.typeCheckingMode": "strict",
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "tests",
+        "-p",
+        "test*.py"
+    ],
+    "editor.rulers": [80, 120]
+}

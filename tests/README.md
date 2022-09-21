@@ -1,6 +1,6 @@
 # Tests folder
 
-To run tests, install the re queirements and run
+To run tests, install the see [setup](../README.md) and run
 
 ```bash
 ~$ python -m unittest discover ./tests
