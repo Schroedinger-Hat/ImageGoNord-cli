@@ -146,7 +146,7 @@ if __name__ == '__main__':
         key = key_value[0].lower()
 
         condition_argument = key in ["--img", "-i"]
-        IMAGE_PATTERN = r'([A-z]|[\/|\.|\-|\_|\s])*\.([a-z]{3}|[a-z]{4})$'
+        IMAGE_PATTERN = r'([A-z]|[\/|\.|\-|\_|\s])*\.([A-z]{3}|[A-z]{4})$'
         if condition_argument:
             if (len(key_value) > 1 and
                 re.search(IMAGE_PATTERN, key_value[1]) is not None):
