@@ -2,15 +2,11 @@
 
 import logging
 import sys
-
 from typing import Union
+
 from ImageGoNord import GoNord
 
-from image_go_nord_client import (
-    get_argument_parser,
-    get_palette_list,
-    get_default_palette,
-)
+from image_go_nord_client import get_argument_parser, get_palette_dict
 
 __ALL__ = ["main"]
 print(sys.warnoptions)
@@ -22,13 +18,12 @@ logging.basicConfig(
 
 
 def main(argv: Union[list[str], None] = None):
-    is_palette_selected = False
 
     if argv is None:
         argv = sys.argv.copy()
 
     parser = get_argument_parser()
-    arguments, uknown_args = parser.parse_known_args(argv.copy())
+    arguments, _ = parser.parse_known_args(argv.copy())
     if arguments.quiet_mode:
         logging.basicConfig(level=logging.CRITICAL)
 
@@ -55,51 +50,26 @@ def main(argv: Union[list[str], None] = None):
         logging.info("Set up pixels width area: %s", w)
         logging.info("Set up pixels height area: %s", h)
 
-    palettes = get_palette_list()
+    if not (selected_palette := get_palette_dict().get(arguments.palette)):
+        logging.warning("No palette found with the name %s", arguments.palette)
+        return 1
 
-    is_palette_selected = False
-    for arg in uknown_args:
-        arg = arg.replace("-", "")
-        selected_palette, args_colors = arg.split("=") if "=" in arg else (arg, None)
-        selected_colors = args_colors.split(",") if args_colors else []
-        for palette in palettes:
-            if selected_palette.lower() == palette.name.lower():
-                is_palette_selected = True
-                go_nord.reset_palette()
-                go_nord.set_palette_lookup_path(str(palette.path) + "/")
+    logging.info("Use palette set: %s", selected_palette.name.capitalize())
+    go_nord.reset_palette()
+    go_nord.set_palette_lookup_path(str(selected_palette.path) + "/")
 
-                if not selected_colors:
-                    logging.info("Use all color set: %s", palette.name.capitalize())
-                    go_nord.reset_palette()
-                    go_nord.set_palette_lookup_path(str(palette.path) + "/")
-                    for color in palette.colors:
-                        go_nord.add_file_to_palette(str(color.name) + ".txt")
+    all_colors_names = sorted([color.name for color in selected_palette.colors])
+    if not set(arguments.colors).issubset(set(all_colors_names)):
+        logging.warning(
+            "Color %s not found, possible colors are %s",
+            arguments.colors,
+            all_colors_names,
+        )
+        return 1
 
-                logging.info("Use palette set: %s", palette.name.capitalize())
-                for selected_color in selected_colors:
-                    color = next(
-                        filter(
-                            lambda c: selected_color.lower() in c.name.lower(),
-                            palette.colors,
-                        )
-                    )
-                    go_nord.add_file_to_palette(color.name + ".txt")
-
-                    for color in palette.colors:
-                        frm_string = (
-                            "\t %s \u2713"
-                            if color.name.lower() == selected_color.lower()
-                            else "\t %s \u2718"
-                        )
-                        logging.info(frm_string, color.name)
-
-    if not is_palette_selected:
-        palette = get_default_palette()
-        go_nord.reset_palette()
-        logging.warning("No theme specified, use default Nord theme")
-        go_nord.set_palette_lookup_path(str(palette.path) + "/")
-        for color in palette.colors:
-            go_nord.add_file_to_palette(str(color.name) + ".txt")
+    selected_colors = arguments.colors if arguments.colors else all_colors_names
+    for color in selected_colors:
+        go_nord.add_file_to_palette(str(color) + ".txt")
 
     go_nord.convert_image(image, save_path=output_image_path)
 

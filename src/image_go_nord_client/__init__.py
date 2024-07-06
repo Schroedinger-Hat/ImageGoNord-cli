@@ -1,8 +1,8 @@
 import argparse
+from argparse import RawDescriptionHelpFormatter
 from dataclasses import dataclass
 from pathlib import Path
-
-from argparse import RawDescriptionHelpFormatter
+from typing import Optional
 
 VERSION = (Path(__file__).parent / "VERSION").read_text().strip()
 DEFAULT_EXTENSION = ".png"
@@ -62,6 +62,20 @@ class Palette:
     colors: list[Color]
 
 
+def get_palette_dict() -> dict[str, Palette]:
+    return {
+        folder.name.lower(): Palette(
+            name=folder.name.lower(),
+            path=folder,
+            colors=[
+                Color(name=file.name.replace(".txt", ""), path=file)
+                for file in folder.iterdir()
+            ],
+        )
+        for folder in (Path(__file__).parent / "palettes").iterdir()
+    }
+
+
 def get_palette_list() -> list[Palette]:
     return [
         Palette(
@@ -74,6 +88,14 @@ def get_palette_list() -> list[Palette]:
         )
         for folder in (Path(__file__).parent / "palettes").iterdir()
     ]
+
+
+def search_palette_by_name(name: str) -> Optional[Palette]:
+    for palette in get_palette_list():
+        if name.lower() == palette.name.lower():
+            return palette
+
+    return None
 
 
 def get_default_palette() -> Palette:
@@ -159,6 +181,26 @@ def get_argument_parser() -> argparse.ArgumentParser:
         metavar="WEIGHT[,HEIGHT]",
         default=[],
         help="specify pixels of the area for average color calculation",
+    )
+
+    parser.add_argument(
+        "-p",
+        "--palette",
+        type=str,
+        dest="palette",
+        metavar="PALETTE",
+        default="nord",
+        help="specify the palette to use",
+    )
+
+    parser.add_argument(
+        "-c",
+        "--colors",
+        type=lambda value: list(value.split(",")),
+        dest="colors",
+        metavar="COLORS",
+        default=[],
+        help="specify the colors to use",
     )
 
     return parser

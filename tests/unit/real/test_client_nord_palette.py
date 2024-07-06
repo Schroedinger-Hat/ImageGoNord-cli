@@ -23,7 +23,8 @@ class ClientShould(UnitTestBaseClass):
                 self.data / "blue_nord_aurora_square.png",
                 f"-i={self.input_image_path}",
                 f"-o={output_image_path}",
-                "--nord=Aurora",
+                "--palette=nord",
+                "--colors=Aurora",
             )
 
     def test_convert_to_nord_palette_with_frost_theme_when_given_specific_palette(self):
@@ -38,7 +39,8 @@ class ClientShould(UnitTestBaseClass):
                 self.data / "blue_nord_frost_square.png",
                 f"-i={self.input_image_path}",
                 f"-o={output_image_path}",
-                "--nord=Frost",
+                "--palette=nord",
+                "--colors=Frost",
             )
 
     def test_convert_to_nord_palette_with_polarnight_and_aurora_theme_when_given_specific_palette(
@@ -55,5 +57,6 @@ class ClientShould(UnitTestBaseClass):
                 self.data / "blue_nord_polarnight_aurora_square.png",
                 f"-i={self.input_image_path}",
                 f"-o={output_image_path}",
-                "--nord=PolarNight,Aurora",
+                "--palette=nord",
+                "--colors=PolarNight,Aurora",
             )

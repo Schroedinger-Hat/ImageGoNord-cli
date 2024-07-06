@@ -24,5 +24,5 @@ class ClientShould(UnitTestBaseClass):
                 self.expected_image_path,
                 f"-i={self.input_image_path}",
                 f"-o={output_image_path}",
-                "--monokai",
+                "--palette=monokai",
             )
