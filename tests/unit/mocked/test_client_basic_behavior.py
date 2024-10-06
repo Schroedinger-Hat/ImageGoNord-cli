@@ -1,7 +1,8 @@
-from image_go_nord_client.main import main
-from .unit_test_base_class import UnitTestBaseClass
-
 from unittest.mock import ANY
+
+from image_go_nord_client.main import main
+
+from .unit_test_base_class import UnitTestBaseClass
 
 
 class ClientShould(UnitTestBaseClass):
@@ -43,7 +44,7 @@ class ClientShould(UnitTestBaseClass):
             main(argv=["image-go-nord-client", "--version"])
             self.assertEqual(0, cm.exception.code)
 
-        self.assertEqual("0.2.0", self.mocked_stdout.getvalue().strip())
+        self.assertRegex(self.mocked_stdout.getvalue().strip(), r"^\d+.\d+.\d+[ab]*")
         self.mock_gn_instance.open_image.assert_not_called()
         self.mock_gn_instance.convert_image.assert_not_called()
 
@@ -51,7 +52,7 @@ class ClientShould(UnitTestBaseClass):
             main(argv=["image-go-nord-client", "-v"])
             self.assertEqual(0, cm.exception.code)
 
-        self.assertIn("0.2.0", self.mocked_stdout.getvalue().strip())
+        self.assertRegex(self.mocked_stdout.getvalue().strip(), r"^\d+.\d+.\d+[ab]*")
         self.mock_gn_instance.open_image.assert_not_called()
         self.mock_gn_instance.convert_image.assert_not_called()
 

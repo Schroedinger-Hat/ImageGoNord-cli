@@ -9,7 +9,6 @@ from ImageGoNord import GoNord
 from image_go_nord_client import get_argument_parser, get_palette_dict
 
 __ALL__ = ["main"]
-print(sys.warnoptions)
 
 logging.basicConfig(
     level=logging.INFO,
