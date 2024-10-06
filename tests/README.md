@@ -1,6 +1,6 @@
 # Tests folder
 
-To run tests, install the see [setup](../README.md) and run
+To run tests, see [setup](../README.md) and run
 
 ```bash
 ~$ python -m unittest discover ./tests
