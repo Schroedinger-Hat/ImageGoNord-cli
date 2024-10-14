@@ -15,20 +15,27 @@ Include any essential instructions for:
   ```
 
 - Install dependencies
-  ```
+  ```shell
   pip install -r requirements.txt
   ```
 - Running it
+  ```shell
+  export PYTHONPATH=$PYTHONPATH:$PWD/src:$PWD/tests
+  python src/image_go_nord_client --img='<path_to_your_image>' 
   ```
-  python src/cli.py --img='<path_to_your_image>' 
+  Or if you prefer
+  ```shell
+  export PYTHONPATH=$PYTHONPATH:$PWD/src:$PWD/tests
+  cd src
+  python image_go_nord_client --img='<path_to_your_image>' 
   ```
 
 The algorithm can take some time (we are working on improving it), you can find the result with the name *nord.png*.
 
 You can define some more configuration and use different palettes, find more using:
 
-```
-python src/cli.py --help
+```shell
+python src/image_go_nord_client --img='<path_to_your_image>' 
 ```
 
 ### Contributing

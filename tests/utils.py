@@ -1,5 +1,6 @@
 import subprocess
 from pathlib import Path
+import sys
 
 
 def run_image_go_nord_client(*args):
@@ -8,8 +9,14 @@ def run_image_go_nord_client(*args):
     :param args: The arguments to pass directly to the script.
     """
 
-    command = ["python", (str(Path.cwd() / 'src' / 'cli.py')), *args]
-    return " ".join(command), subprocess.check_output(command, universal_newlines=True)
+    command = [
+        sys.executable,
+        (str(Path.cwd() / "src" / "image_go_nord_client")),
+        *args,
+    ]
+    return " ".join(command), subprocess.check_output(
+        command, universal_newlines=True, stderr=subprocess.STDOUT
+    )
 
 
 def is_image_empty(image_path):
