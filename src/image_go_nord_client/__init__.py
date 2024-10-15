@@ -26,7 +26,7 @@ Theme options:
                                     Ex: python src/cli.py --nord=Aurora,PolarNight,SnowStorm
                                     Ex: python src/cli.py --monokai
 
-Email bug reports, questions, discussions to <social@schroedinger-hat.org>
+Email bug reports, questions, discussions to <dev@schroedinger-hat.org>
 and/or open issues at https://github.com/Schroedinger-Hat/ImageGoNord/issues/new
 """
 
