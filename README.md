@@ -1,8 +1,8 @@
-# ImageGoNord client 
+# ImageGoNord client
 
 ImageGoNord is a tool that can convert your rgb images to nordtheme palette.
 
-You can find more information here: [ImageGoNord](https://github.com/Schrodinger-Hat/ImageGoNord)
+You can find more information here: [ImageGoNord](https://github.com/schroedinger-Hat/ImageGoNord)
 
 This repository is a client, written in python, that can convert any sort of image into a nordtheme palette image.
 
@@ -11,7 +11,7 @@ Include any essential instructions for:
 
 - Getting it:
   ```
-  git clone https://github.com/Schrodinger-Hat/ImageGoNord-cli
+  git clone https://github.com/schroedinger-Hat/ImageGoNord-cli
   ```
 
 - Install dependencies
@@ -21,13 +21,13 @@ Include any essential instructions for:
 - Running it
   ```shell
   export PYTHONPATH=$PYTHONPATH:$PWD/src:$PWD/tests
-  python src/image_go_nord_client --img='<path_to_your_image>' 
+  python src/image_go_nord_client --img='<path_to_your_image>'
   ```
   Or if you prefer
   ```shell
   export PYTHONPATH=$PYTHONPATH:$PWD/src:$PWD/tests
   cd src
-  python image_go_nord_client --img='<path_to_your_image>' 
+  python image_go_nord_client --img='<path_to_your_image>'
   ```
 
 The algorithm can take some time (we are working on improving it), you can find the result with the name *nord.png*.
@@ -35,7 +35,7 @@ The algorithm can take some time (we are working on improving it), you can find 
 You can define some more configuration and use different palettes, find more using:
 
 ```shell
-python src/image_go_nord_client --img='<path_to_your_image>' 
+python src/image_go_nord_client --img='<path_to_your_image>'
 ```
 
 ### Contributing
