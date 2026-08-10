@@ -110,6 +110,23 @@ def get_default_palette() -> Palette:
     )
 
 
+def normalize_argv(argv: list[str]) -> list[str]:
+    normalized_argv = argv.copy()
+
+    if normalized_argv and not normalized_argv[0].startswith("-"):
+        normalized_argv = normalized_argv[1:]
+
+    if normalized_argv and normalized_argv[0] == "convert":
+        normalized_argv = normalized_argv[1:]
+
+    return normalized_argv
+
+
+def parse_arguments(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
+    parser = get_argument_parser()
+    return parser.parse_known_args(normalize_argv(argv))
+
+
 def get_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=__doc__,

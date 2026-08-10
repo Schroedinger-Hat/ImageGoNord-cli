@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from image_go_nord_client import get_argument_parser
+from image_go_nord_client import parse_arguments
 
 
 class ArgparseShould(TestCase):
@@ -13,8 +13,7 @@ class ArgparseShould(TestCase):
             "--colors=Aurora,Frost",
         ]
 
-        argsparser = get_argument_parser()
-        namespace, _ = argsparser.parse_known_args(command)
+        namespace, _ = parse_arguments(command)
 
         self.assertEqual(namespace.input_path, "file_1.png")
         self.assertEqual(namespace.output_path, "file_output.png")
@@ -23,8 +22,7 @@ class ArgparseShould(TestCase):
 
     def test_default_colors(self) -> None:
         command = ["image-go-nort", "-i=file_1.png", "-o=file_output.png"]
-        argsparser = get_argument_parser()
-        namespace, _ = argsparser.parse_known_args(command)
+        namespace, _ = parse_arguments(command)
         self.assertEqual(namespace.input_path, "file_1.png")
         self.assertEqual(namespace.output_path, "file_output.png")
         self.assertEqual(namespace.palette, "nord")
@@ -39,10 +37,24 @@ class ArgparseShould(TestCase):
             "--colors=PolarNight,Aurora",
         ]
 
-        argsparser = get_argument_parser()
-        namespace, _ = argsparser.parse_known_args(command)
+        namespace, _ = parse_arguments(command)
 
         self.assertEqual(namespace.input_path, "file_1.png")
         self.assertEqual(namespace.output_path, "file_output.png")
         self.assertEqual(namespace.palette, "nord")
         self.assertEqual(namespace.colors, ["PolarNight", "Aurora"])
+
+    def test_convert_subcommand(self) -> None:
+        command = [
+            "image-go-nort",
+            "convert",
+            "-i=file_1.png",
+            "-o=file_output.png",
+            "--palette=nord",
+        ]
+
+        namespace, _ = parse_arguments(command)
+
+        self.assertEqual(namespace.input_path, "file_1.png")
+        self.assertEqual(namespace.output_path, "file_output.png")
+        self.assertEqual(namespace.palette, "nord")

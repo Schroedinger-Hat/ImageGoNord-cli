@@ -6,7 +6,7 @@ from typing import Union
 
 from ImageGoNord import GoNord
 
-from image_go_nord_client import get_argument_parser, get_palette_dict
+from image_go_nord_client import get_palette_dict, parse_arguments
 
 __ALL__ = ["main"]
 
@@ -21,8 +21,7 @@ def main(argv: Union[list[str], None] = None):
     if argv is None:
         argv = sys.argv.copy()
 
-    parser = get_argument_parser()
-    arguments, _ = parser.parse_known_args(argv.copy())
+    arguments, _ = parse_arguments(argv)
     if arguments.quiet_mode:
         logging.basicConfig(level=logging.CRITICAL)
 
