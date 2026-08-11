@@ -105,7 +105,7 @@ def _run_palette_command(argv: list[str], request_id: str) -> int:
                         request_id=request_id,
                         ok=False,
                         error={
-                            "code": "E_PALETTE_NOT_FOUND",
+                            "code": error_code("palette_not_found", "E_PALETTE_NOT_FOUND"),
                             "message": (
                                 f"No palette found with the name {arguments.name}"
                             ),
@@ -179,7 +179,7 @@ def _run_tui_command(argv: list[str], request_id: str) -> int:
                             request_id=request_id,
                             ok=False,
                             error={
-                                "code": "E_VALIDATION",
+                                "code": error_code("validation"),
                                 "message": result["message"],
                             },
                         ),
@@ -222,7 +222,7 @@ def _run_tui_command(argv: list[str], request_id: str) -> int:
                     request_id=request_id,
                     ok=False,
                     error={
-                        "code": "E_DEPENDENCY",
+                        "code": error_code("dependency"),
                         "message": message,
                     },
                 ),
@@ -429,7 +429,7 @@ def _run_batch_command(argv: list[str], request_id: str) -> int:
                         request_id=request_id,
                         ok=False,
                         error={
-                            "code": "E_VALIDATION",
+                            "code": error_code("validation"),
                             "message": message,
                         },
                     ),
@@ -499,7 +499,7 @@ def _run_batch_command(argv: list[str], request_id: str) -> int:
                             request_id=request_id,
                             ok=False,
                             error={
-                                "code": "E_DEPENDENCY",
+                                "code": error_code("dependency"),
                                 "message": message,
                             },
                             result=result,
@@ -522,7 +522,7 @@ def _run_batch_command(argv: list[str], request_id: str) -> int:
                             request_id=request_id,
                             ok=False,
                             error={
-                                "code": "E_PALETTE_NOT_FOUND",
+                                "code": error_code("palette_not_found", "E_PALETTE_NOT_FOUND"),
                                 "message": message,
                             },
                             result=result,
@@ -548,7 +548,7 @@ def _run_batch_command(argv: list[str], request_id: str) -> int:
                             request_id=request_id,
                             ok=False,
                             error={
-                                "code": "E_VALIDATION",
+                                "code": error_code("validation"),
                                 "message": message,
                             },
                             result=result,
@@ -622,7 +622,7 @@ def _run_batch_command(argv: list[str], request_id: str) -> int:
                             request_id=request_id,
                             ok=False,
                             error={
-                                "code": "E_CONVERSION_FAILED",
+                                "code": error_code("conversion_failed"),
                                 "message": "One or more files failed during batch apply",
                             },
                             result=result,
@@ -813,7 +813,7 @@ def main(argv: Union[list[str], None] = None):
                 request_id=request_id,
                 ok=False,
                 error={
-                    "code": "E_INTERNAL",
+                    "code": error_code("internal"),
                     "message": message,
                 },
             ),
@@ -851,7 +851,7 @@ def main(argv: Union[list[str], None] = None):
                 request_id=request_id,
                 ok=False,
                 error={
-                    "code": "E_PALETTE_NOT_FOUND",
+                    "code": error_code("palette_not_found", "E_PALETTE_NOT_FOUND"),
                     "message": f"No palette found with the name {arguments.palette}",
                 },
             ),
@@ -875,7 +875,7 @@ def main(argv: Union[list[str], None] = None):
                 request_id=request_id,
                 ok=False,
                 error={
-                    "code": "E_VALIDATION",
+                    "code": error_code("validation"),
                     "message": (
                         f"Color {arguments.colors} not found, "
                         f"possible colors are {all_colors_names}"
@@ -900,7 +900,7 @@ def main(argv: Union[list[str], None] = None):
                 request_id=request_id,
                 ok=False,
                 error={
-                    "code": "E_CONVERSION_FAILED",
+                    "code": error_code("conversion_failed"),
                     "message": message,
                 },
             ),

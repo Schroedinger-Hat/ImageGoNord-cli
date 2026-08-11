@@ -12,6 +12,7 @@ except Exception:  # pragma: no cover - fallback when older ImageGoNord is insta
     SHARED_ERROR_CODES = {
         "validation": "E_VALIDATION",
         "dependency": "E_DEPENDENCY",
+        "palette_not_found": "E_PALETTE_NOT_FOUND",
         "conversion_failed": "E_CONVERSION_FAILED",
         "internal": "E_INTERNAL",
     }
