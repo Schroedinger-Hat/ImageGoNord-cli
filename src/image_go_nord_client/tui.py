@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 from textwrap import dedent
 from typing import Any, Dict, Optional, Tuple
 
@@ -499,8 +500,22 @@ def launch_tui() -> Tuple[int, str]:
                 band.append(segment)
             return band
 
+        def _normalize_hex_value(self, raw_hex: str) -> str:
+            value = raw_hex.strip()
+            if re.fullmatch(r"#[0-9a-fA-F]{6}", value):
+                return value.lower()
+            return "#808080"
+
         def _read_hex_value(self, color_path: Path) -> str:
-            return color_path.read_text(encoding="utf-8").splitlines()[0].strip()
+            try:
+                lines = color_path.read_text(encoding="utf-8").splitlines()
+            except OSError:
+                return "#808080"
+
+            if not lines:
+                return "#808080"
+
+            return self._normalize_hex_value(lines[0])
 
         def _get_palette_preview_renderable(self, palette_name: str):
             from rich.console import Group
