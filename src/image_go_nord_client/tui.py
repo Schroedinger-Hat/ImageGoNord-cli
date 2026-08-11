@@ -305,6 +305,7 @@ def launch_tui() -> Tuple[int, str]:
             ("r", "reset_form", "Reset"),
             ("p", "show_palettes", "Palettes"),
             ("m", "toggle_mode", "Mode"),
+            ("f", "refresh_input_files", "Refresh Inputs"),
             ("v", "previous_input_file", "Prev Input"),
             ("n", "next_input_file", "Next Input"),
             ("d", "derive_output", "Derive Output"),
@@ -357,6 +358,11 @@ def launch_tui() -> Tuple[int, str]:
             self._input_file_cache = sorted(candidates)
             return self._input_file_cache
 
+        def _refresh_input_file_cache(self) -> list[str]:
+            self._input_file_cache = []
+            self._input_file_index = -1
+            return self._discover_input_files()
+
         def _suggest_output_path(self, input_path: str) -> str:
             input_file = Path(input_path)
             if input_file.suffix:
@@ -405,6 +411,7 @@ def launch_tui() -> Tuple[int, str]:
                 - r: reset form
 
                 Input and output:
+                - f: refresh discoverable input files
                 - v: previous discovered image
                 - n: next discovered image
                 - d: derive output name from input
@@ -616,6 +623,10 @@ def launch_tui() -> Tuple[int, str]:
         def action_convert(self) -> None:
             self._run_conversion()
 
+        def action_refresh_input_files(self) -> None:
+            candidates = self._refresh_input_file_cache()
+            self._write_status(f"Input cache refreshed: {len(candidates)} file(s) found")
+
         def action_toggle_help(self) -> None:
             self._set_help_visible(not self._help_visible)
             if self._help_visible:
@@ -710,6 +721,7 @@ def launch_tui() -> Tuple[int, str]:
                     with Horizontal(id="action-row"):
                         yield Button("Convert", id="convert-button", variant="primary")
                         yield Button("Reset", id="reset-button")
+                        yield Button("Refresh", id="refresh-inputs-button")
                         yield Button("Prev Input", id="prev-input-button")
                         yield Button("Next Input", id="next-input-button")
                         yield Button("Derive Out", id="derive-output-button")
@@ -726,7 +738,7 @@ def launch_tui() -> Tuple[int, str]:
                     yield Static("Activity", classes="title")
                     yield RichLog(id="log", wrap=True, highlight=True, markup=True)
                     yield Static(
-                        "Shortcuts: h help | v prev input | n next input | d derive output | m mode | [ prev | ] next | c convert | r reset | p palettes | q quit",
+                        "Shortcuts: h help | f refresh | v prev input | n next input | d derive output | m mode | [ prev | ] next | c convert | r reset | p palettes | q quit",
                         id="shortcut-hint",
                         classes="hint",
                     )
@@ -783,6 +795,10 @@ def launch_tui() -> Tuple[int, str]:
             self._refresh_palette_preview()
 
         def on_button_pressed(self, event: Button.Pressed) -> None:
+            if event.button.id == "refresh-inputs-button":
+                self.action_refresh_input_files()
+                return
+
             if event.button.id == "help-button":
                 self.action_toggle_help()
                 return
