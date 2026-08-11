@@ -295,6 +295,13 @@ def launch_tui() -> Tuple[int, str]:
                 """
             ).strip("\n")
 
+        def _default_palette_name(self) -> str:
+            if "nord" in self._palette_names:
+                return "nord"
+            if self._palette_names:
+                return self._palette_names[0]
+            return "nord"
+
         def _selected_palette_name(self) -> str:
             palette_select = self.query_one("#palette-select", Select)
             value = palette_select.value
@@ -359,6 +366,7 @@ def launch_tui() -> Tuple[int, str]:
             self.query_one("#colors-input", Input).value = ""
             self.query_one("#blur-check", Checkbox).value = False
             self.query_one("#no-avg-check", Checkbox).value = False
+            self.query_one("#palette-select", Select).value = self._default_palette_name()
             self._refresh_palette_preview()
             self._write_status("Form reset")
 
@@ -371,7 +379,7 @@ def launch_tui() -> Tuple[int, str]:
 
         def compose(self) -> ComposeResult:
             palette_options = [(name, name) for name in self._palette_names]
-            default_palette = self._palette_names[0] if self._palette_names else "nord"
+            default_palette = self._default_palette_name()
 
             yield Header()
             yield Static(self._hero_banner, id="hero")
