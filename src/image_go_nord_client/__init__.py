@@ -172,6 +172,15 @@ def get_argument_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
+        "--format",
+        type=str,
+        dest="output_format",
+        choices=["text", "json"],
+        default="text",
+        help="specify output format",
+    )
+
+    parser.add_argument(
         "-o",
         "--out",
         type=str,

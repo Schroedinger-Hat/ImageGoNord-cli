@@ -1,3 +1,4 @@
+import json
 from unittest.mock import ANY
 
 from image_go_nord_client.main import main
@@ -93,3 +94,18 @@ class ClientShould(UnitTestBaseClass):
         with self.assertRaises(SystemExit) as cm:
             main(argv=["image-go-nord-client", "-i=file4.png", "--pixels-area=xxx,10"])
             self.assertEqual(2, cm.exception.code)
+
+    def test_json_output_when_palette_is_not_found(self):
+        result = main(
+            argv=[
+                "image-go-nord-client",
+                "--img=input5.png",
+                "--palette=unknown-palette",
+                "--format=json",
+            ]
+        )
+
+        payload = json.loads(self.mocked_stdout.getvalue().strip())
+        self.assertEqual(1, result)
+        self.assertFalse(payload["ok"])
+        self.assertEqual("E_PALETTE_NOT_FOUND", payload["error"]["code"])

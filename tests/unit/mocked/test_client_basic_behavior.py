@@ -1,3 +1,4 @@
+import json
 from unittest.mock import ANY
 
 from image_go_nord_client.main import main
@@ -99,3 +100,19 @@ class ClientShould(UnitTestBaseClass):
         self.mock_gn_instance.convert_image.assert_called_with(
             ANY, save_path="output1.png"
         )
+
+    def test_json_output_when_conversion_is_successful(self):
+        main(
+            argv=[
+                "image-go-nord-client",
+                "convert",
+                "--img=input-json.png",
+                "--format=json",
+            ]
+        )
+
+        payload = json.loads(self.mocked_stdout.getvalue().strip())
+        self.assertTrue(payload["ok"])
+        self.assertEqual("input-json.png", payload["result"]["input_path"])
+        self.assertEqual(self.DEFAULT_OUTPUT_FILE_NAME, payload["result"]["output_path"])
+        self.assertEqual("nord", payload["result"]["palette"])

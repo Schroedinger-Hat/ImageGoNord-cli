@@ -1,10 +1,14 @@
 #! /usr/bin/env python3
 
+import json
 import logging
 import sys
 from typing import Union
 
-from ImageGoNord import GoNord
+try:
+    from ImageGoNord import GoNord
+except ModuleNotFoundError:
+    GoNord = None
 
 from image_go_nord_client import get_palette_dict, parse_arguments
 
@@ -16,6 +20,11 @@ logging.basicConfig(
 )
 
 
+def _write_json(arguments, payload: dict) -> None:
+    if arguments.output_format == "json":
+        print(json.dumps(payload, sort_keys=True))
+
+
 def main(argv: Union[list[str], None] = None):
 
     if argv is None:
@@ -24,6 +33,12 @@ def main(argv: Union[list[str], None] = None):
     arguments, _ = parse_arguments(argv)
     if arguments.quiet_mode:
         logging.basicConfig(level=logging.CRITICAL)
+
+    if GoNord is None:
+        raise RuntimeError(
+            "ImageGoNord package is required to run this command. "
+            "Install dependencies from requirements.txt."
+        )
 
     go_nord = GoNord()
 
@@ -50,6 +65,16 @@ def main(argv: Union[list[str], None] = None):
 
     if not (selected_palette := get_palette_dict().get(arguments.palette)):
         logging.warning("No palette found with the name %s", arguments.palette)
+        _write_json(
+            arguments,
+            {
+                "error": {
+                    "code": "E_PALETTE_NOT_FOUND",
+                    "message": f"No palette found with the name {arguments.palette}",
+                },
+                "ok": False,
+            },
+        )
         return 1
 
     logging.info("Use palette set: %s", selected_palette.name.capitalize())
@@ -63,6 +88,19 @@ def main(argv: Union[list[str], None] = None):
             arguments.colors,
             all_colors_names,
         )
+        _write_json(
+            arguments,
+            {
+                "error": {
+                    "code": "E_VALIDATION",
+                    "message": (
+                        f"Color {arguments.colors} not found, "
+                        f"possible colors are {all_colors_names}"
+                    ),
+                },
+                "ok": False,
+            },
+        )
         return 1
 
     selected_colors = arguments.colors if arguments.colors else all_colors_names
@@ -70,5 +108,18 @@ def main(argv: Union[list[str], None] = None):
         go_nord.add_file_to_palette(str(color) + ".txt")
 
     go_nord.convert_image(image, save_path=output_image_path)
+
+    _write_json(
+        arguments,
+        {
+            "ok": True,
+            "result": {
+                "colors": selected_colors,
+                "input_path": arguments.input_path,
+                "output_path": output_image_path,
+                "palette": selected_palette.name,
+            },
+        },
+    )
 
     return 0
