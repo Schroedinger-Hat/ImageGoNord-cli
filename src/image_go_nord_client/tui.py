@@ -415,26 +415,43 @@ def launch_tui() -> Tuple[int, str]:
             self.query_one("#palette-preview", Static).update(preview)
 
         def _update_last_conversion(self, *, status: int | None = None, result: dict | None = None) -> None:
+            from rich.console import Group
+            from rich.text import Text
+
             if status is None or result is None:
-                self.query_one("#last-conversion", Static).update(
-                    "No conversion yet\nRun a conversion to see the latest result summary."
+                empty_state = Text()
+                empty_state.append("Last run: ", style="bold white")
+                empty_state.append("idle", style="bold black on #7b8794")
+                empty_state.append(
+                    "\nRun a conversion to see the latest result summary.",
+                    style="bright_black",
                 )
+                self.query_one("#last-conversion", Static).update(empty_state)
                 return
 
-            lines = [f"Status: {'success' if status == 0 else f'error ({status})'}"]
+            badge = Text()
+            badge.append("Last run: ", style="bold white")
             if status == 0:
-                lines.extend(
-                    [
-                        f"Input: {result.get('input_path', '-')}",
-                        f"Output: {result.get('output_path', '-')}",
-                        f"Palette: {result.get('palette', '-')}",
-                        f"Colors: {', '.join(result.get('colors', [])) or '-'}",
-                    ]
+                badge.append("success", style="bold black on #a3be8c")
+            else:
+                badge.append(f"error ({status})", style="bold white on #bf616a")
+
+            details = Text()
+            if status == 0:
+                details.append(f"\nInput: {result.get('input_path', '-')}", style="white")
+                details.append(f"\nOutput: {result.get('output_path', '-')}", style="white")
+                details.append(f"\nPalette: {result.get('palette', '-')}", style="cyan")
+                details.append(
+                    f"\nColors: {', '.join(result.get('colors', [])) or '-'}",
+                    style="bright_white",
                 )
             else:
-                lines.append(f"Message: {result.get('message', '-')}")
+                details.append(
+                    f"\nMessage: {result.get('message', '-')}",
+                    style="white",
+                )
 
-            self.query_one("#last-conversion", Static).update("\n".join(lines))
+            self.query_one("#last-conversion", Static).update(Group(badge, details))
 
         def _cycle_palette(self, offset: int) -> None:
             if not self._palette_names:
