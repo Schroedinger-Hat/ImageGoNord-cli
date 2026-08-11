@@ -243,8 +243,9 @@ def _is_supported_image_file(path: Path) -> bool:
     }
 
 
-def _build_output_path(output_dir: Path, input_file: Path) -> Path:
-    return output_dir / f"{input_file.stem}-nord{input_file.suffix.lower()}"
+def _build_output_path(input_dir: Path, output_dir: Path, input_file: Path) -> Path:
+    relative_parent = input_file.relative_to(input_dir).parent
+    return output_dir / relative_parent / f"{input_file.stem}-nord{input_file.suffix.lower()}"
 
 
 def _run_batch_command(argv: list[str], request_id: str) -> int:
@@ -285,7 +286,7 @@ def _run_batch_command(argv: list[str], request_id: str) -> int:
 
     plan = []
     for image_file in image_files:
-        out_path = _build_output_path(output_dir, image_file)
+        out_path = _build_output_path(input_dir, output_dir, image_file)
         command_parts = [
             "image-go-nord-client",
             f"--img={image_file}",
@@ -417,6 +418,7 @@ def _run_batch_command(argv: list[str], request_id: str) -> int:
                     go_nord.add_file_to_palette(str(color) + ".txt")
 
                 image = go_nord.open_image(step["input"])
+                Path(step["output"]).parent.mkdir(parents=True, exist_ok=True)
                 go_nord.convert_image(image, save_path=step["output"])
             except Exception as exc:
                 file_status["ok"] = False
