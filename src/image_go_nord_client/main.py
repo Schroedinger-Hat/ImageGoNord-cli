@@ -3,6 +3,7 @@
 import json
 import logging
 import sys
+import uuid
 from typing import Union
 
 try:
@@ -13,6 +14,7 @@ except ModuleNotFoundError:
 from image_go_nord_client import get_palette_dict, parse_arguments
 
 __ALL__ = ["main"]
+CONTRACT_VERSION = "3.0"
 
 logging.basicConfig(
     level=logging.INFO,
@@ -25,12 +27,34 @@ def _write_json(arguments, payload: dict) -> None:
         print(json.dumps(payload, sort_keys=True))
 
 
+def _json_response(
+    *,
+    request_id: str,
+    ok: bool,
+    result: Union[dict, None] = None,
+    error: Union[dict, None] = None,
+) -> dict:
+    payload = {
+        "contract_version": CONTRACT_VERSION,
+        "ok": ok,
+        "request_id": request_id,
+    }
+
+    if ok:
+        payload["result"] = result or {}
+    else:
+        payload["error"] = error or {}
+
+    return payload
+
+
 def main(argv: Union[list[str], None] = None):
 
     if argv is None:
         argv = sys.argv.copy()
 
     arguments, _ = parse_arguments(argv)
+    request_id = str(uuid.uuid4())
     if arguments.quiet_mode:
         logging.basicConfig(level=logging.CRITICAL)
 
@@ -67,13 +91,14 @@ def main(argv: Union[list[str], None] = None):
         logging.warning("No palette found with the name %s", arguments.palette)
         _write_json(
             arguments,
-            {
-                "error": {
+            _json_response(
+                request_id=request_id,
+                ok=False,
+                error={
                     "code": "E_PALETTE_NOT_FOUND",
                     "message": f"No palette found with the name {arguments.palette}",
                 },
-                "ok": False,
-            },
+            ),
         )
         return 1
 
@@ -90,16 +115,17 @@ def main(argv: Union[list[str], None] = None):
         )
         _write_json(
             arguments,
-            {
-                "error": {
+            _json_response(
+                request_id=request_id,
+                ok=False,
+                error={
                     "code": "E_VALIDATION",
                     "message": (
                         f"Color {arguments.colors} not found, "
                         f"possible colors are {all_colors_names}"
                     ),
                 },
-                "ok": False,
-            },
+            ),
         )
         return 1
 
@@ -111,15 +137,16 @@ def main(argv: Union[list[str], None] = None):
 
     _write_json(
         arguments,
-        {
-            "ok": True,
-            "result": {
+        _json_response(
+            request_id=request_id,
+            ok=True,
+            result={
                 "colors": selected_colors,
                 "input_path": arguments.input_path,
                 "output_path": output_image_path,
                 "palette": selected_palette.name,
             },
-        },
+        ),
     )
 
     return 0

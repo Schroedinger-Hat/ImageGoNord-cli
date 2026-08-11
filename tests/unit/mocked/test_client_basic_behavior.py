@@ -113,6 +113,8 @@ class ClientShould(UnitTestBaseClass):
 
         payload = json.loads(self.mocked_stdout.getvalue().strip())
         self.assertTrue(payload["ok"])
+        self.assertRegex(payload["request_id"], r"^[0-9a-f-]{36}$")
+        self.assertEqual("3.0", payload["contract_version"])
         self.assertEqual("input-json.png", payload["result"]["input_path"])
         self.assertEqual(self.DEFAULT_OUTPUT_FILE_NAME, payload["result"]["output_path"])
         self.assertEqual("nord", payload["result"]["palette"])
