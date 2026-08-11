@@ -198,6 +198,54 @@ def parse_tui_arguments(argv: list[str]) -> argparse.Namespace:
         help="run a TUI action without launching the interactive app",
     )
 
+    parser.add_argument(
+        "--img",
+        type=str,
+        dest="input_path",
+        default=None,
+        help="input image path for convert-image action",
+    )
+
+    parser.add_argument(
+        "--out",
+        type=str,
+        dest="output_path",
+        default=OUTPUT_IMAGE_NAME,
+        help="output image path for convert-image action",
+    )
+
+    parser.add_argument(
+        "--palette",
+        type=str,
+        dest="palette",
+        default="nord",
+        help="palette for convert-image action",
+    )
+
+    parser.add_argument(
+        "--colors",
+        type=lambda value: list(value.split(",")),
+        dest="colors",
+        default=[],
+        help="comma-separated colors for convert-image action",
+    )
+
+    parser.add_argument(
+        "--blur",
+        action="store_true",
+        dest="enable_blur",
+        default=False,
+        help="enable blur for convert-image action",
+    )
+
+    parser.add_argument(
+        "--no-avg",
+        action="store_true",
+        dest="disable_avg_pixels",
+        default=False,
+        help="disable avg optimization for convert-image action",
+    )
+
     return parser.parse_args(normalize_argv(argv)[1:])
 
 

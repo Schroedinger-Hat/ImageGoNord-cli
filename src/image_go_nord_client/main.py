@@ -132,7 +132,15 @@ def _run_tui_command(argv: list[str], request_id: str) -> int:
     arguments = parse_tui_arguments(argv)
 
     if arguments.action is not None:
-        status, result = _run_tui_action_helper(arguments.action)
+        status, result = _run_tui_action_helper(
+            arguments.action,
+            colors=arguments.colors,
+            disable_avg_pixels=arguments.disable_avg_pixels,
+            enable_blur=arguments.enable_blur,
+            input_path=arguments.input_path,
+            output_path=arguments.output_path,
+            palette=arguments.palette,
+        )
         if arguments.output_format == "json":
             if status == 0:
                 print(
@@ -165,6 +173,8 @@ def _run_tui_command(argv: list[str], request_id: str) -> int:
                 )
         else:
             print(result["message"])
+            if "next_command" in result:
+                print(result["next_command"])
 
         return status
 

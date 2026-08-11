@@ -27,12 +27,53 @@ class ClientShould(UnitTestBaseClass):
 
     def test_run_tui_action_convert_image_in_text_mode(self):
         result = main(
-            argv=["image-go-nord-client", "tui", "--action=convert-image"]
+            argv=[
+                "image-go-nord-client",
+                "tui",
+                "--action=convert-image",
+                "--img=wall.png",
+                "--out=wall-nord.png",
+                "--palette=nord",
+                "--colors=Aurora,Frost",
+                "--blur",
+            ]
         )
 
         self.assertEqual(0, result)
-        self.assertIn("Convert flow is available in CLI mode", self.mocked_stdout.getvalue())
+        self.assertIn(
+            "Generated convert command from TUI action",
+            self.mocked_stdout.getvalue(),
+        )
+        self.assertIn("--img=wall.png", self.mocked_stdout.getvalue())
+        self.assertIn("--out=wall-nord.png", self.mocked_stdout.getvalue())
         self.mocked_go_nord.assert_not_called()
+
+    def test_return_2_when_convert_action_has_no_input_path(self):
+        result = main(
+            argv=["image-go-nord-client", "tui", "--action=convert-image"]
+        )
+
+        self.assertEqual(2, result)
+        self.assertIn("requires --img", self.mocked_stdout.getvalue())
+        self.mocked_go_nord.assert_not_called()
+
+    def test_run_tui_action_convert_image_in_json_mode(self):
+        result = main(
+            argv=[
+                "image-go-nord-client",
+                "tui",
+                "--action=convert-image",
+                "--img=wall.png",
+                "--out=wall-nord.png",
+                "--format=json",
+            ]
+        )
+
+        payload = json.loads(self.mocked_stdout.getvalue().strip())
+        self.assertEqual(0, result)
+        self.assertTrue(payload["ok"])
+        self.assertEqual("convert-image", payload["result"]["action"])
+        self.assertIn("--img=wall.png", payload["result"]["next_command"])
 
     def test_fail_tui_action_with_validation_error_payload(self):
         with patch(

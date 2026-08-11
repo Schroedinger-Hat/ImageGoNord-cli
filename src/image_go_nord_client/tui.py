@@ -1,4 +1,4 @@
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from image_go_nord_client import get_palette_list
 
@@ -18,7 +18,16 @@ TUI_ACTIONS = {
 }
 
 
-def run_tui_action(action: str) -> Tuple[int, Dict[str, Any]]:
+def run_tui_action(
+    action: str,
+    *,
+    colors: list[str],
+    disable_avg_pixels: bool,
+    enable_blur: bool,
+    input_path: Optional[str],
+    output_path: str,
+    palette: str,
+) -> Tuple[int, Dict[str, Any]]:
     if action not in TUI_ACTIONS:
         return (
             2,
@@ -29,14 +38,33 @@ def run_tui_action(action: str) -> Tuple[int, Dict[str, Any]]:
         )
 
     if action == "convert-image":
+        if input_path is None:
+            return (
+                2,
+                {
+                    "message": "convert-image action requires --img=<path>",
+                },
+            )
+
+        command_parts = [
+            "image-go-nord-client",
+            f"--img={input_path}",
+            f"--out={output_path}",
+            f"--palette={palette}",
+        ]
+        if colors:
+            command_parts.append(f"--colors={','.join(colors)}")
+        if enable_blur:
+            command_parts.append("--blur")
+        if disable_avg_pixels:
+            command_parts.append("--no-avg")
+
+        next_command = " ".join(command_parts)
         return (
             0,
             {
-                "message": (
-                    "Convert flow is available in CLI mode. "
-                    "Use: image-go-nord-client --img=<path> --out=<path>."
-                ),
-                "next_command": "image-go-nord-client --img=<path> --out=<path>",
+                "message": "Generated convert command from TUI action.",
+                "next_command": next_command,
             },
         )
 
