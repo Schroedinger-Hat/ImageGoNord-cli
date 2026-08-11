@@ -127,6 +127,52 @@ def parse_arguments(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
     return parser.parse_known_args(normalize_argv(argv))
 
 
+def parse_palette_arguments(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Palette management commands",
+        add_help=True,
+        prog="image-go-nord-client palette",
+    )
+
+    parser.add_argument(
+        "--format",
+        type=str,
+        dest="output_format",
+        choices=["text", "json"],
+        default="text",
+        help="specify output format",
+    )
+
+    subparsers = parser.add_subparsers(dest="palette_action", required=True)
+
+    list_parser = subparsers.add_parser("list", help="list available palettes")
+    list_parser.add_argument(
+        "--format",
+        type=str,
+        dest="sub_output_format",
+        choices=["text", "json"],
+        default=None,
+        help="specify output format",
+    )
+
+    info_parser = subparsers.add_parser("info", help="show palette details")
+    info_parser.add_argument(
+        "--format",
+        type=str,
+        dest="sub_output_format",
+        choices=["text", "json"],
+        default=None,
+        help="specify output format",
+    )
+    info_parser.add_argument("name", type=str, help="palette name")
+
+    arguments = parser.parse_args(normalize_argv(argv)[1:])
+    if arguments.sub_output_format is not None:
+        arguments.output_format = arguments.sub_output_format
+
+    return arguments
+
+
 def get_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=__doc__,

@@ -11,7 +11,14 @@ try:
 except ModuleNotFoundError:
     GoNord = None
 
-from image_go_nord_client import get_palette_dict, parse_arguments
+from image_go_nord_client import (
+    get_palette_dict,
+    get_palette_list,
+    normalize_argv,
+    parse_arguments,
+    parse_palette_arguments,
+    search_palette_by_name,
+)
 
 __ALL__ = ["main"]
 CONTRACT_VERSION = "3.0"
@@ -48,13 +55,88 @@ def _json_response(
     return payload
 
 
+def _run_palette_command(argv: list[str], request_id: str) -> int:
+    arguments = parse_palette_arguments(argv)
+
+    if arguments.palette_action == "list":
+        palette_names = sorted([palette.name for palette in get_palette_list()])
+
+        if arguments.output_format == "json":
+            print(
+                json.dumps(
+                    _json_response(
+                        request_id=request_id,
+                        ok=True,
+                        result={"palettes": palette_names},
+                    ),
+                    sort_keys=True,
+                )
+            )
+        else:
+            for palette_name in palette_names:
+                print(palette_name)
+
+        return 0
+
+    selected_palette = search_palette_by_name(arguments.name)
+    if selected_palette is None:
+        if arguments.output_format == "json":
+            print(
+                json.dumps(
+                    _json_response(
+                        request_id=request_id,
+                        ok=False,
+                        error={
+                            "code": "E_PALETTE_NOT_FOUND",
+                            "message": (
+                                f"No palette found with the name {arguments.name}"
+                            ),
+                        },
+                    ),
+                    sort_keys=True,
+                )
+            )
+        else:
+            logging.warning("No palette found with the name %s", arguments.name)
+
+        return 2
+
+    colors = sorted([color.name for color in selected_palette.colors])
+    if arguments.output_format == "json":
+        print(
+            json.dumps(
+                _json_response(
+                    request_id=request_id,
+                    ok=True,
+                    result={
+                        "colors": colors,
+                        "name": selected_palette.name,
+                        "path": str(selected_palette.path),
+                    },
+                ),
+                sort_keys=True,
+            )
+        )
+    else:
+        print(f"name: {selected_palette.name}")
+        print(f"path: {selected_palette.path}")
+        print(f"colors: {', '.join(colors)}")
+
+    return 0
+
+
 def main(argv: Union[list[str], None] = None):
 
     if argv is None:
         argv = sys.argv.copy()
 
-    arguments, _ = parse_arguments(argv)
     request_id = str(uuid.uuid4())
+
+    normalized_argv = normalize_argv(argv)
+    if normalized_argv and normalized_argv[0] == "palette":
+        return _run_palette_command(argv, request_id)
+
+    arguments, _ = parse_arguments(argv)
     if arguments.quiet_mode:
         logging.basicConfig(level=logging.CRITICAL)
 
