@@ -4,6 +4,7 @@ import json
 import logging
 import sys
 import uuid
+from importlib.util import find_spec
 from typing import Union
 
 try:
@@ -16,6 +17,7 @@ from image_go_nord_client import (
     get_palette_list,
     normalize_argv,
     parse_arguments,
+    parse_doctor_arguments,
     parse_palette_arguments,
     parse_tui_arguments,
     search_palette_by_name,
@@ -220,6 +222,115 @@ def _run_tui_command(argv: list[str], request_id: str) -> int:
     return status
 
 
+def _is_textual_available() -> bool:
+    return find_spec("textual") is not None
+
+
+def _run_doctor_command(argv: list[str], request_id: str) -> int:
+    arguments = parse_doctor_arguments(argv)
+
+    checks = []
+    checks.append(
+        {
+            "hint": "Use Python 3.10+ for best compatibility.",
+            "message": f"Python {sys.version.split()[0]}",
+            "name": "python",
+            "status": "pass",
+        }
+    )
+
+    go_nord_available = GoNord is not None
+    checks.append(
+        {
+            "hint": "Install dependencies with `pip install -r requirements.txt`.",
+            "message": "ImageGoNord dependency available"
+            if go_nord_available
+            else "ImageGoNord dependency missing",
+            "name": "image_go_nord",
+            "status": "pass" if go_nord_available else "fail",
+        }
+    )
+
+    palette_count = len(get_palette_list())
+    checks.append(
+        {
+            "hint": "Ensure palette files are present in src/image_go_nord_client/palettes.",
+            "message": f"Detected {palette_count} palettes",
+            "name": "palettes",
+            "status": "pass" if palette_count > 0 else "fail",
+        }
+    )
+
+    textual_available = _is_textual_available()
+    checks.append(
+        {
+            "hint": "Install optional dependency with `pip install textual`.",
+            "message": "Textual dependency available"
+            if textual_available
+            else "Textual dependency missing (optional)",
+            "name": "textual",
+            "status": "pass" if textual_available else "warn",
+        }
+    )
+
+    failed_checks = [check for check in checks if check["status"] == "fail"]
+    warning_checks = [check for check in checks if check["status"] == "warn"]
+
+    summary = {
+        "failed": len(failed_checks),
+        "passed": len([check for check in checks if check["status"] == "pass"]),
+        "warnings": len(warning_checks),
+    }
+
+    if failed_checks:
+        error_code = (
+            "E_DEPENDENCY"
+            if any(check["name"] == "image_go_nord" for check in failed_checks)
+            else "E_VALIDATION"
+        )
+        status = 4 if error_code == "E_DEPENDENCY" else 2
+
+        if arguments.output_format == "json":
+            print(
+                json.dumps(
+                    _json_response(
+                        request_id=request_id,
+                        ok=False,
+                        error={
+                            "code": error_code,
+                            "message": "Doctor checks failed",
+                        },
+                        result={"checks": checks, "summary": summary},
+                    ),
+                    sort_keys=True,
+                )
+            )
+        else:
+            print("doctor checks failed")
+            for check in checks:
+                print(f"- {check['name']}: {check['status']} ({check['message']})")
+
+        return status
+
+    if arguments.output_format == "json":
+        print(
+            json.dumps(
+                _json_response(
+                    request_id=request_id,
+                    ok=True,
+                    result={"checks": checks, "summary": summary},
+                ),
+                sort_keys=True,
+            )
+        )
+    else:
+        print("doctor checks passed")
+        for check in checks:
+            print(f"- {check['name']}: {check['status']} ({check['message']})")
+
+    return 0
+
+
 def main(argv: Union[list[str], None] = None):
 
     if argv is None:
@@ -233,6 +344,9 @@ def main(argv: Union[list[str], None] = None):
 
     if normalized_argv and normalized_argv[0] == "tui":
         return _run_tui_command(argv, request_id)
+
+    if normalized_argv and normalized_argv[0] == "doctor":
+        return _run_doctor_command(argv, request_id)
 
     arguments, _ = parse_arguments(argv)
     if arguments.quiet_mode:
