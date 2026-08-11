@@ -23,6 +23,13 @@ Include any essential instructions for:
   ```shell
   poetry install
   ```
+
+- Local development commands with Poetry
+  ```shell
+  poetry run ign --help
+  poetry run image-go-nord-client --img='<path_to_your_image>'
+  poetry run python -m unittest tests.unit.mocked.test_client_batch_behavior
+  ```
 - Running it
   ```shell
   export PYTHONPATH=$PYTHONPATH:$PWD/src:$PWD/tests
@@ -292,6 +299,20 @@ Publish to PyPI:
 ```shell
 poetry config pypi-token.pypi <your-token>
 poetry publish --build
+```
+
+If `poetry install` fails while building Pillow, update the lock and install again:
+
+```shell
+poetry lock
+poetry install
+```
+
+If your machine has multiple Python versions, prefer Python 3.12 or 3.13 for local dev:
+
+```shell
+poetry env use 3.13
+poetry install
 ```
 
 After installation, command entrypoints are:

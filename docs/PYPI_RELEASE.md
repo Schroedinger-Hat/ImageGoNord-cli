@@ -19,6 +19,13 @@ pip install poetry
 poetry install
 ```
 
+Run locally with Poetry:
+
+```shell
+poetry run ign --help
+poetry run image-go-nord-client --help
+```
+
 ## Build artifacts
 
 ```shell
@@ -50,3 +57,19 @@ poetry publish --build
 - Package metadata is defined in `pyproject.toml`.
 - Console scripts are `image-go-nord-client` and `ign`.
 - Palette `.txt` files and `VERSION` are included in package data.
+
+## Troubleshooting
+
+If `poetry install` fails on Pillow build backends:
+
+```shell
+poetry lock
+poetry install
+```
+
+If needed, switch Poetry to a compatible interpreter:
+
+```shell
+poetry env use 3.13
+poetry install
+```
