@@ -216,6 +216,7 @@ The TUI command is powered by [Textual](https://textual.textualize.io/) and supp
 - palette browsing from the same screen
 - ASCII art ImageGoNord masthead on the TUI home screen
 - a two-panel studio layout with a horizontal palette strip, live palette preview, and real color swatches
+- a last-conversion summary card with input, output, palette, and colors
 - activity log feedback during each action
 - keyboard shortcuts: `[` previous palette, `]` next palette, `c` convert, `r` reset, `p` palettes, `q` quit
 

@@ -249,6 +249,12 @@ def launch_tui() -> Tuple[int, str]:
             min-height: 7;
         }
 
+        #last-conversion {
+            margin-top: 1;
+            min-height: 8;
+            color: #d6e4ff;
+        }
+
         #action-row {
             margin-top: 1;
             height: auto;
@@ -408,6 +414,28 @@ def launch_tui() -> Tuple[int, str]:
             preview = self._get_palette_preview_renderable(palette_name)
             self.query_one("#palette-preview", Static).update(preview)
 
+        def _update_last_conversion(self, *, status: int | None = None, result: dict | None = None) -> None:
+            if status is None or result is None:
+                self.query_one("#last-conversion", Static).update(
+                    "No conversion yet\nRun a conversion to see the latest result summary."
+                )
+                return
+
+            lines = [f"Status: {'success' if status == 0 else f'error ({status})'}"]
+            if status == 0:
+                lines.extend(
+                    [
+                        f"Input: {result.get('input_path', '-')}",
+                        f"Output: {result.get('output_path', '-')}",
+                        f"Palette: {result.get('palette', '-')}",
+                        f"Colors: {', '.join(result.get('colors', [])) or '-'}",
+                    ]
+                )
+            else:
+                lines.append(f"Message: {result.get('message', '-')}")
+
+            self.query_one("#last-conversion", Static).update("\n".join(lines))
+
         def _cycle_palette(self, offset: int) -> None:
             if not self._palette_names:
                 self._write_status("No palettes available", is_error=True)
@@ -437,6 +465,7 @@ def launch_tui() -> Tuple[int, str]:
                 output_path=output_path,
                 palette=palette,
             )
+            self._update_last_conversion(status=status, result=result)
             if status == 0:
                 self._write_status(result["message"])
             else:
@@ -502,6 +531,8 @@ def launch_tui() -> Tuple[int, str]:
                 with Vertical(id="right-panel", classes="panel"):
                     yield Static("Palette Preview", classes="title")
                     yield Static("", id="palette-preview")
+                    yield Static("Last Conversion", classes="title")
+                    yield Static("", id="last-conversion")
                     yield Static("Activity", classes="title")
                     yield RichLog(id="log", wrap=True, highlight=True, markup=True)
                     yield Static(
@@ -512,6 +543,7 @@ def launch_tui() -> Tuple[int, str]:
 
         def on_mount(self) -> None:
             self._refresh_palette_preview()
+            self._update_last_conversion()
             self._write_status("Ready")
 
         def on_input_submitted(self, event: Input.Submitted) -> None:
