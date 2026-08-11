@@ -28,15 +28,18 @@ from image_go_nord_client.tui import launch_tui as _launch_tui
 from image_go_nord_client.tui import run_tui_action as _run_tui_action_helper
 
 __ALL__ = ["main"]
+
 CONTRACT_VERSION = "3.0"
 
 logging.basicConfig(
     level=logging.INFO,
     format="[%(levelname)s] %(message)s",
+
 )
 
 
 def _write_json(arguments, payload: dict) -> None:
+
     if arguments.output_format == "json":
         print(json.dumps(payload, sort_keys=True))
 
@@ -50,11 +53,13 @@ def _json_response(
 ) -> dict:
     payload = {
         "contract_version": CONTRACT_VERSION,
+
         "ok": ok,
         "request_id": request_id,
     }
 
     if result is not None:
+
         payload["result"] = result
 
     if ok:
@@ -83,8 +88,7 @@ def _run_palette_command(argv: list[str], request_id: str) -> int:
                 )
             )
         else:
-            for palette_name in palette_names:
-                print(palette_name)
+            _print_palette_names(palette_names)
 
         return 0
 
@@ -229,6 +233,72 @@ def _run_tui_command(argv: list[str], request_id: str) -> int:
 
 def _is_textual_available() -> bool:
     return find_spec("textual") is not None
+
+
+def _is_rich_available() -> bool:
+    return find_spec("rich") is not None
+
+
+def _print_palette_names(palette_names: list[str]) -> None:
+    if not _is_rich_available():
+        for palette_name in palette_names:
+            print(palette_name)
+        return
+
+    from rich.console import Console
+    from rich.table import Table
+
+    table = Table(title="Available Palettes")
+    table.add_column("Name", style="cyan")
+    for palette_name in palette_names:
+        table.add_row(palette_name)
+
+    Console().print(table)
+
+
+def _print_batch_summary(result: dict, *, apply_mode: bool, plan: list[dict]) -> None:
+    if not _is_rich_available():
+        print("batch apply summary" if apply_mode else "batch dry-run summary")
+        print(f"- input_dir: {result['input_dir']}")
+        print(f"- output_dir: {result['output_dir']}")
+        print(f"- recursive: {result['recursive']}")
+        print(f"- palette: {result['palette']}")
+        print(f"- images_detected: {result['summary']['images_detected']}")
+        if apply_mode:
+            print(f"- converted: {result['summary'].get('converted', 0)}")
+            print(f"- failed: {result['summary'].get('failed', 0)}")
+
+        if plan:
+            print("planned commands:")
+            for step in plan:
+                print(step["command"])
+        return
+
+    from rich.console import Console
+    from rich.table import Table
+
+    console = Console()
+    summary_table = Table(
+        title="Batch Apply Summary" if apply_mode else "Batch Dry-Run Summary"
+    )
+    summary_table.add_column("Field", style="cyan")
+    summary_table.add_column("Value", style="white")
+    summary_table.add_row("input_dir", result["input_dir"])
+    summary_table.add_row("output_dir", result["output_dir"])
+    summary_table.add_row("recursive", str(result["recursive"]))
+    summary_table.add_row("palette", result["palette"])
+    summary_table.add_row("images_detected", str(result["summary"]["images_detected"]))
+    if apply_mode:
+        summary_table.add_row("converted", str(result["summary"].get("converted", 0)))
+        summary_table.add_row("failed", str(result["summary"].get("failed", 0)))
+
+    console.print(summary_table)
+    if plan:
+        command_table = Table(title="Planned Commands")
+        command_table.add_column("Command", style="green")
+        for step in plan:
+            command_table.add_row(step["command"])
+        console.print(command_table)
 
 
 def _is_supported_image_file(path: Path) -> bool:
@@ -467,20 +537,7 @@ def _run_batch_command(argv: list[str], request_id: str) -> int:
             )
         )
     else:
-        print("batch apply summary" if arguments.apply else "batch dry-run summary")
-        print(f"- input_dir: {result['input_dir']}")
-        print(f"- output_dir: {result['output_dir']}")
-        print(f"- recursive: {result['recursive']}")
-        print(f"- palette: {result['palette']}")
-        print(f"- images_detected: {result['summary']['images_detected']}")
-        if arguments.apply:
-            print(f"- converted: {result['summary'].get('converted', 0)}")
-            print(f"- failed: {result['summary'].get('failed', 0)}")
-
-        if plan:
-            print("planned commands:")
-            for step in plan:
-                print(step["command"])
+        _print_batch_summary(result, apply_mode=arguments.apply, plan=plan)
 
     return 0
 

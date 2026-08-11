@@ -118,6 +118,18 @@ class ClientShould(UnitTestBaseClass):
         self.assertIn("--palette=nord", output)
         self.mocked_go_nord.assert_not_called()
 
+    def test_use_batch_renderer_helper_in_text_mode(self):
+        with TemporaryDirectory() as tmp_dir:
+            base_path = Path(tmp_dir)
+            (base_path / "one.png").write_text("x", encoding="utf-8")
+
+            with patch("image_go_nord_client.main._print_batch_summary") as mocked_renderer:
+                result = main(argv=["image-go-nord-client", "batch", str(base_path)])
+
+        self.assertEqual(0, result)
+        mocked_renderer.assert_called_once()
+        self.mocked_go_nord.assert_not_called()
+
     def test_run_batch_apply_successfully_in_json_mode(self):
         with TemporaryDirectory() as tmp_dir:
             base_path = Path(tmp_dir)

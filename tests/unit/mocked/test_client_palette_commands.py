@@ -1,4 +1,5 @@
 import json
+from unittest.mock import patch
 
 from image_go_nord_client.main import main
 
@@ -6,6 +7,14 @@ from .unit_test_base_class import UnitTestBaseClass
 
 
 class ClientShould(UnitTestBaseClass):
+    def test_use_palette_renderer_helper_in_text_mode(self):
+        with patch("image_go_nord_client.main._print_palette_names") as mocked_renderer:
+            result = main(argv=["image-go-nord-client", "palette", "list"])
+
+        self.assertEqual(0, result)
+        mocked_renderer.assert_called_once()
+        self.mocked_go_nord.assert_not_called()
+
     def test_list_available_palettes_in_text_mode(self):
         result = main(argv=["image-go-nord-client", "palette", "list"])
 
