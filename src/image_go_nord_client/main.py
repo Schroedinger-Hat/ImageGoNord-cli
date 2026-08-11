@@ -24,6 +24,10 @@ from image_go_nord_client import (
     parse_tui_arguments,
     search_palette_by_name,
 )
+from image_go_nord_client.engine_contract import (
+    error_code,
+    get_engine_capabilities_snapshot,
+)
 from image_go_nord_client.tui import launch_tui as _launch_tui
 from image_go_nord_client.tui import run_tui_action as _run_tui_action_helper
 
@@ -652,6 +656,7 @@ def _run_batch_command(argv: list[str], request_id: str) -> int:
 
 def _run_doctor_command(argv: list[str], request_id: str) -> int:
     arguments = parse_doctor_arguments(argv)
+    contract_source, capabilities = get_engine_capabilities_snapshot()
 
     checks = []
     checks.append(
@@ -697,6 +702,19 @@ def _run_doctor_command(argv: list[str], request_id: str) -> int:
         }
     )
 
+    checks.append(
+        {
+            "hint": "Upgrade ImageGoNord package to consume shared contract primitives.",
+            "message": (
+                "Shared engine contract loaded from ImageGoNord package"
+                if contract_source == "imagegonord"
+                else "Using CLI fallback engine contract (upgrade ImageGoNord for shared source)"
+            ),
+            "name": "engine_contract",
+            "status": "pass" if contract_source == "imagegonord" else "warn",
+        }
+    )
+
     failed_checks = [check for check in checks if check["status"] == "fail"]
     warning_checks = [check for check in checks if check["status"] == "warn"]
 
@@ -707,12 +725,12 @@ def _run_doctor_command(argv: list[str], request_id: str) -> int:
     }
 
     if failed_checks:
-        error_code = (
-            "E_DEPENDENCY"
+        resolved_error_code = (
+            error_code("dependency")
             if any(check["name"] == "image_go_nord" for check in failed_checks)
-            else "E_VALIDATION"
+            else error_code("validation")
         )
-        status = 4 if error_code == "E_DEPENDENCY" else 2
+        status = 4 if resolved_error_code == error_code("dependency") else 2
 
         if arguments.output_format == "json":
             print(
@@ -721,10 +739,14 @@ def _run_doctor_command(argv: list[str], request_id: str) -> int:
                         request_id=request_id,
                         ok=False,
                         error={
-                            "code": error_code,
+                            "code": resolved_error_code,
                             "message": "Doctor checks failed",
                         },
-                        result={"checks": checks, "summary": summary},
+                        result={
+                            "capabilities": capabilities,
+                            "checks": checks,
+                            "summary": summary,
+                        },
                     ),
                     sort_keys=True,
                 )
@@ -740,7 +762,11 @@ def _run_doctor_command(argv: list[str], request_id: str) -> int:
                 _json_response(
                     request_id=request_id,
                     ok=True,
-                    result={"checks": checks, "summary": summary},
+                    result={
+                        "capabilities": capabilities,
+                        "checks": checks,
+                        "summary": summary,
+                    },
                 ),
                 sort_keys=True,
             )
