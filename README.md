@@ -59,6 +59,7 @@ Text-mode UI enhancement:
 - When `rich` is installed, `palette list` and `batch` text outputs are rendered as tables.
 - Without `rich`, the CLI keeps the existing plain-text output format.
 - `batch --apply` now shows per-file progress in text mode (for example `[1/5] ok file.png`).
+- With `rich`, `batch --apply` uses a progress bar and keeps per-file updates concise.
 
 The algorithm can take some time (we are working on improving it), you can find the result with the name *nord.png*.
 

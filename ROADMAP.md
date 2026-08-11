@@ -8,9 +8,7 @@
 - Completed: command structure foundations (`convert`, `batch`, `palette`, `doctor`, `tui`) and JSON contract continuity.
 - Completed: batch dry-run and apply execution with deterministic error/exit semantics.
 - Completed: preserved recursive output folder mapping for batch conversions.
-- In progress: beautiful terminal output improvements (Rich tables for palette and batch text summaries).
-- In progress: apply progress indicators in batch text mode.
-- In progress: structured doctor checks report in text mode.
+- Completed: beautiful terminal output baseline (Rich tables for palette/batch, batch apply progress bar, structured doctor report).
 - Next: richer terminal presentation (tables/progress/spinners), watch mode, analyze/benchmark/compare commands.
 
 ## Vision
