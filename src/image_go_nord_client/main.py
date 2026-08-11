@@ -17,8 +17,10 @@ from image_go_nord_client import (
     normalize_argv,
     parse_arguments,
     parse_palette_arguments,
+    parse_tui_arguments,
     search_palette_by_name,
 )
+from image_go_nord_client.tui import launch_tui as _launch_tui
 
 __ALL__ = ["main"]
 CONTRACT_VERSION = "3.0"
@@ -125,6 +127,50 @@ def _run_palette_command(argv: list[str], request_id: str) -> int:
     return 0
 
 
+def _run_tui_command(argv: list[str], request_id: str) -> int:
+    arguments = parse_tui_arguments(argv)
+    status, message = _launch_tui()
+
+    if status == 0:
+        if arguments.output_format == "json":
+            print(
+                json.dumps(
+                    _json_response(
+                        request_id=request_id,
+                        ok=True,
+                        result={
+                            "message": message,
+                            "mode": "tui",
+                        },
+                    ),
+                    sort_keys=True,
+                )
+            )
+        elif message:
+            print(message)
+
+        return 0
+
+    if arguments.output_format == "json":
+        print(
+            json.dumps(
+                _json_response(
+                    request_id=request_id,
+                    ok=False,
+                    error={
+                        "code": "E_DEPENDENCY",
+                        "message": message,
+                    },
+                ),
+                sort_keys=True,
+            )
+        )
+    else:
+        logging.error(message)
+
+    return status
+
+
 def main(argv: Union[list[str], None] = None):
 
     if argv is None:
@@ -135,6 +181,9 @@ def main(argv: Union[list[str], None] = None):
     normalized_argv = normalize_argv(argv)
     if normalized_argv and normalized_argv[0] == "palette":
         return _run_palette_command(argv, request_id)
+
+    if normalized_argv and normalized_argv[0] == "tui":
+        return _run_tui_command(argv, request_id)
 
     arguments, _ = parse_arguments(argv)
     if arguments.quiet_mode:

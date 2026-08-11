@@ -173,6 +173,25 @@ def parse_palette_arguments(argv: list[str]) -> argparse.Namespace:
     return arguments
 
 
+def parse_tui_arguments(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Interactive terminal UI",
+        add_help=True,
+        prog="image-go-nord-client tui",
+    )
+
+    parser.add_argument(
+        "--format",
+        type=str,
+        dest="output_format",
+        choices=["text", "json"],
+        default="text",
+        help="specify output format",
+    )
+
+    return parser.parse_args(normalize_argv(argv)[1:])
+
+
 def get_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=__doc__,
