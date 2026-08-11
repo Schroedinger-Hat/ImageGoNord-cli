@@ -219,8 +219,9 @@ The TUI command is powered by [Textual](https://textual.textualize.io/) and supp
 - a simple/studio mode toggle for small or large terminal layouts
 - automatic simple-mode fallback on narrow terminals
 - a last-conversion summary card with success/error badge, input, output, palette, and colors
+- quick path helpers: cycle discoverable input files and derive output filename from input
 - activity log feedback during each action
-- keyboard shortcuts: `m` mode, `[` previous palette, `]` next palette, `c` convert, `r` reset, `p` palettes, `q` quit
+- keyboard shortcuts: `n` next input, `d` derive output, `m` mode, `[` previous palette, `]` next palette, `c` convert, `r` reset, `p` palettes, `q` quit
 
 If Textual is not installed, the command returns exit code `4` and a dependency error.
 

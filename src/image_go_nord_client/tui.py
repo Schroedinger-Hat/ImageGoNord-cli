@@ -292,6 +292,8 @@ def launch_tui() -> Tuple[int, str]:
             ("r", "reset_form", "Reset"),
             ("p", "show_palettes", "Palettes"),
             ("m", "toggle_mode", "Mode"),
+            ("n", "next_input_file", "Next Input"),
+            ("d", "derive_output", "Derive Output"),
             ("[", "previous_palette", "Prev Palette"),
             ("]", "next_palette", "Next Palette"),
         ]
@@ -303,6 +305,7 @@ def launch_tui() -> Tuple[int, str]:
             )
             self._studio_mode = True
             self._manual_mode_override = False
+            self._input_file_index = -1
             self._hero_banner = dedent(
                 r"""
                   ___                                 _____       _   _               _
@@ -325,6 +328,20 @@ def launch_tui() -> Tuple[int, str]:
 
         def _mode_label(self) -> str:
             return "studio" if self._studio_mode else "simple"
+
+        def _discover_input_files(self) -> list[str]:
+            allowed = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"}
+            candidates = []
+            for path in Path.cwd().rglob("*"):
+                if path.is_file() and path.suffix.lower() in allowed:
+                    candidates.append(str(path))
+            return sorted(candidates)
+
+        def _suggest_output_path(self, input_path: str) -> str:
+            input_file = Path(input_path)
+            if input_file.suffix:
+                return str(input_file.with_name(f"{input_file.stem}-nord{input_file.suffix}"))
+            return str(input_file.with_name(f"{input_file.name}-nord.png"))
 
         def _should_use_simple_mode(self) -> bool:
             return self.size.width < 140
@@ -527,6 +544,27 @@ def launch_tui() -> Tuple[int, str]:
         def action_convert(self) -> None:
             self._run_conversion()
 
+        def action_next_input_file(self) -> None:
+            candidates = self._discover_input_files()
+            if not candidates:
+                self._write_status("No image files found under current directory", is_error=True)
+                return
+
+            self._input_file_index = (self._input_file_index + 1) % len(candidates)
+            selected = candidates[self._input_file_index]
+            self.query_one("#input-path", Input).value = selected
+            self._write_status(f"Input selected: {selected}")
+
+        def action_derive_output(self) -> None:
+            input_path = self.query_one("#input-path", Input).value.strip()
+            if not input_path:
+                self._write_status("Set an input path first", is_error=True)
+                return
+
+            derived = self._suggest_output_path(input_path)
+            self.query_one("#output-path", Input).value = derived
+            self._write_status(f"Output derived: {derived}")
+
         def action_toggle_mode(self) -> None:
             self._set_mode(not self._studio_mode, manual=True)
             self._write_status(f"Switched to {self._mode_label()} mode")
@@ -582,6 +620,8 @@ def launch_tui() -> Tuple[int, str]:
                     with Horizontal(id="action-row"):
                         yield Button("Convert", id="convert-button", variant="primary")
                         yield Button("Reset", id="reset-button")
+                        yield Button("Next Input", id="next-input-button")
+                        yield Button("Derive Out", id="derive-output-button")
                         yield Button("Simple", id="mode-button")
                         yield Button("Palettes", id="palettes-button")
                     yield Static("Status: Ready", id="status")
@@ -594,7 +634,7 @@ def launch_tui() -> Tuple[int, str]:
                     yield Static("Activity", classes="title")
                     yield RichLog(id="log", wrap=True, highlight=True, markup=True)
                     yield Static(
-                        "Shortcuts: m mode | [ prev | ] next | c convert | r reset | p palettes | q quit",
+                        "Shortcuts: n next input | d derive output | m mode | [ prev | ] next | c convert | r reset | p palettes | q quit",
                         id="shortcut-hint",
                         classes="hint",
                     )
@@ -633,6 +673,14 @@ def launch_tui() -> Tuple[int, str]:
             self._refresh_palette_preview()
 
         def on_button_pressed(self, event: Button.Pressed) -> None:
+            if event.button.id == "next-input-button":
+                self.action_next_input_file()
+                return
+
+            if event.button.id == "derive-output-button":
+                self.action_derive_output()
+                return
+
             if event.button.id == "mode-button":
                 self.action_toggle_mode()
                 return
