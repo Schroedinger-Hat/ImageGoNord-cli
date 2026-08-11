@@ -18,6 +18,11 @@ Include any essential instructions for:
   ```shell
   pip install -r requirements.txt
   ```
+
+- Install with Poetry
+  ```shell
+  poetry install
+  ```
 - Running it
   ```shell
   export PYTHONPATH=$PYTHONPATH:$PWD/src:$PWD/tests
@@ -265,6 +270,34 @@ When `--apply` is used, the command returns:
 - Follow the contributor guidelines
 - Follow the code style / requirements
 - Format for commit messages
+
+## Packaging and PyPI
+
+This repository is now Poetry-managed for packaging and release.
+
+Build distributions:
+
+```shell
+poetry build
+```
+
+Install locally from wheel:
+
+```shell
+pip install dist/image_go_nord_client-1.0.0-py3-none-any.whl
+```
+
+Publish to PyPI:
+
+```shell
+poetry config pypi-token.pypi <your-token>
+poetry publish --build
+```
+
+After installation, command entrypoints are:
+
+- `image-go-nord-client`
+- `ign`
 
 
 # Authors
