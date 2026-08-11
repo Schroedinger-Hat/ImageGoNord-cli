@@ -189,6 +189,9 @@ def _run_typer_app(argv: list[str]) -> int:
 def run(argv: Optional[list[str]] = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
 
+    if not args:
+        return legacy_main(["image-go-nord-client", "tui"])
+
     if _looks_like_legacy_argv(args):
         return legacy_main(["image-go-nord-client", *args])
 

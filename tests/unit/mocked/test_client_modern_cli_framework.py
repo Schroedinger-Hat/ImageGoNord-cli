@@ -6,6 +6,13 @@ from .unit_test_base_class import UnitTestBaseClass
 
 
 class ModernCliFrameworkShould(UnitTestBaseClass):
+    def test_open_tui_when_run_without_arguments(self):
+        with patch("image_go_nord_client.ign.legacy_main", return_value=0) as mocked:
+            result = run([])
+
+        self.assertEqual(0, result)
+        mocked.assert_called_once_with(["image-go-nord-client", "tui"])
+
     def test_fallback_to_legacy_main_when_typer_is_missing(self):
         with patch("image_go_nord_client.ign._is_typer_available", return_value=False):
             with patch("image_go_nord_client.ign.legacy_main", return_value=7) as mocked:

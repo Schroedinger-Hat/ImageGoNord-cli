@@ -22,3 +22,7 @@ class PoetryPackagingShould(TestCase):
         include = self.pyproject["tool"]["poetry"]["include"]
         self.assertIn("src/image_go_nord_client/VERSION", include)
         self.assertIn("src/image_go_nord_client/palettes/**/*.txt", include)
+
+    def test_include_textual_dependency(self):
+        dependencies = self.pyproject["tool"]["poetry"]["dependencies"]
+        self.assertIn("textual", dependencies)

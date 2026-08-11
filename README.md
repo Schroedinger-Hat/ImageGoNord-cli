@@ -26,10 +26,12 @@ Include any essential instructions for:
 
 - Local development commands with Poetry
   ```shell
+  poetry run ign
   poetry run ign --help
   poetry run image-go-nord-client --img='<path_to_your_image>'
   poetry run python -m unittest tests.unit.mocked.test_client_batch_behavior
   ```
+  Running `poetry run ign` without parameters opens the interactive terminal UI.
 - Running it
   ```shell
   export PYTHONPATH=$PYTHONPATH:$PWD/src:$PWD/tests
@@ -213,6 +215,8 @@ The TUI command is powered by [Textual](https://textual.textualize.io/) and supp
 - palette browsing from the same screen
 
 If Textual is not installed, the command returns exit code `4` and a dependency error.
+
+When installing through Poetry, Textual is installed automatically because it is part of the default project dependencies.
 
 Install Textual:
 
