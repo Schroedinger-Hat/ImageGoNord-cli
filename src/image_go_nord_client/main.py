@@ -301,6 +301,36 @@ def _print_batch_summary(result: dict, *, apply_mode: bool, plan: list[dict]) ->
         console.print(command_table)
 
 
+def _print_batch_apply_progress_start(total: int) -> None:
+    if not _is_rich_available():
+        print(f"batch apply progress: 0/{total}")
+        return
+
+    from rich.console import Console
+
+    Console().print(f"[bold cyan]batch apply progress:[/bold cyan] 0/{total}")
+
+
+def _print_batch_apply_progress_step(
+    *, index: int, total: int, input_path: str, ok: bool, error: Union[str, None] = None
+) -> None:
+    short_name = Path(input_path).name
+    if not _is_rich_available():
+        if ok:
+            print(f"[{index}/{total}] ok {short_name}")
+        else:
+            print(f"[{index}/{total}] failed {short_name}: {error}")
+        return
+
+    from rich.console import Console
+
+    console = Console()
+    if ok:
+        console.print(f"[green][{index}/{total}] ok[/green] {short_name}")
+    else:
+        console.print(f"[red][{index}/{total}] failed[/red] {short_name}: {error}")
+
+
 def _is_supported_image_file(path: Path) -> bool:
     return path.suffix.lower() in {
         ".png",
@@ -472,8 +502,10 @@ def _run_batch_command(argv: list[str], request_id: str) -> int:
         output_dir.mkdir(parents=True, exist_ok=True)
         selected_colors = arguments.colors if arguments.colors else all_colors_names
         file_results = []
+        if arguments.output_format == "text":
+            _print_batch_apply_progress_start(len(plan))
 
-        for step in plan:
+        for index, step in enumerate(plan, start=1):
             file_status = {"input": step["input"], "output": step["output"], "ok": True}
             try:
                 go_nord = GoNord()
@@ -495,6 +527,14 @@ def _run_batch_command(argv: list[str], request_id: str) -> int:
                 file_status["error"] = str(exc)
 
             file_results.append(file_status)
+            if arguments.output_format == "text":
+                _print_batch_apply_progress_step(
+                    index=index,
+                    total=len(plan),
+                    input_path=step["input"],
+                    ok=file_status["ok"],
+                    error=file_status.get("error"),
+                )
 
         converted = len([item for item in file_results if item["ok"]])
         failed = len(file_results) - converted

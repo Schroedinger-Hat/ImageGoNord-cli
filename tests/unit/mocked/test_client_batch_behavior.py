@@ -208,6 +208,49 @@ class ClientShould(UnitTestBaseClass):
         self.assertEqual(1, payload["result"]["summary"]["converted"])
         self.assertEqual(1, payload["result"]["summary"]["failed"])
 
+    def test_print_batch_apply_progress_in_text_mode(self):
+        with TemporaryDirectory() as tmp_dir:
+            base_path = Path(tmp_dir)
+            (base_path / "one.png").write_text("x", encoding="utf-8")
+            (base_path / "two.jpg").write_text("x", encoding="utf-8")
+
+            result = main(
+                argv=[
+                    "image-go-nord-client",
+                    "batch",
+                    str(base_path),
+                    "--apply",
+                ]
+            )
+
+        output = self.mocked_stdout.getvalue()
+        self.assertEqual(0, result)
+        self.assertIn("batch apply progress: 0/2", output)
+        self.assertIn("[1/2] ok", output)
+        self.assertIn("[2/2] ok", output)
+
+    def test_print_batch_apply_failure_progress_in_text_mode(self):
+        with TemporaryDirectory() as tmp_dir:
+            base_path = Path(tmp_dir)
+            (base_path / "one.png").write_text("x", encoding="utf-8")
+            (base_path / "two.jpg").write_text("x", encoding="utf-8")
+            self.mock_gn_instance.convert_image.side_effect = [RuntimeError("boom"), None]
+
+            result = main(
+                argv=[
+                    "image-go-nord-client",
+                    "batch",
+                    str(base_path),
+                    "--apply",
+                ]
+            )
+
+        output = self.mocked_stdout.getvalue()
+        self.assertEqual(5, result)
+        self.assertIn("[1/2] failed", output)
+        self.assertIn("boom", output)
+        self.assertIn("[2/2] ok", output)
+
     def test_return_4_when_batch_apply_dependency_is_missing(self):
         with TemporaryDirectory() as tmp_dir:
             base_path = Path(tmp_dir)
