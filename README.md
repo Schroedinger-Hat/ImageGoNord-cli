@@ -30,6 +30,22 @@ Include any essential instructions for:
   python image_go_nord_client --img='<path_to_your_image>'
   ```
 
+## Modern CLI Framework (v1.x)
+
+The CLI now exposes a modern command surface using `ign` command patterns:
+
+```shell
+python -m image_go_nord_client convert ./image.png
+python -m image_go_nord_client palette list
+python -m image_go_nord_client batch ./images --recursive
+python -m image_go_nord_client doctor
+```
+
+Compatibility behavior:
+
+- Existing flag-first usage is still supported (example: `--img=...`).
+- If `typer` is not installed, the client automatically falls back to the legacy parser.
+
 The algorithm can take some time (we are working on improving it), you can find the result with the name *nord.png*.
 
 You can define some more configuration and use different palettes, find more using:
