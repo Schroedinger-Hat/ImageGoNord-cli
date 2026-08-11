@@ -45,6 +45,14 @@ Compatibility behavior:
 
 - Existing flag-first usage is still supported (example: `--img=...`).
 - If `typer` is not installed, the client automatically falls back to the legacy parser.
+- Modern `convert` positional syntax is translated to legacy flags when Typer is unavailable.
+
+Shell completion (when Typer is installed):
+
+```shell
+python -m image_go_nord_client --install-completion
+python -m image_go_nord_client --show-completion
+```
 
 The algorithm can take some time (we are working on improving it), you can find the result with the name *nord.png*.
 

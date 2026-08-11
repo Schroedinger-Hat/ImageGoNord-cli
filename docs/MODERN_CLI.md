@@ -25,6 +25,16 @@ python src/image_go_nord_client palette list
 ```
 
 When `typer` is unavailable, the CLI falls back to legacy parsing automatically.
+When this fallback is active, `convert <image>` is translated to `--img=<image>` for compatibility.
+
+## Completion
+
+When Typer is installed, shell completion can be installed or previewed with:
+
+```shell
+python -m image_go_nord_client --install-completion
+python -m image_go_nord_client --show-completion
+```
 
 ## Dependencies
 
