@@ -173,8 +173,17 @@ def run_tui_action(
 def launch_tui() -> Tuple[int, str]:
     try:
         from textual.app import App, ComposeResult
-        from textual.containers import Vertical
-        from textual.widgets import Button, Checkbox, Footer, Header, Input, Select, Static
+        from textual.containers import Horizontal, Vertical
+        from textual.widgets import (
+            Button,
+            Checkbox,
+            Footer,
+            Header,
+            Input,
+            RichLog,
+            Select,
+            Static,
+        )
     except ModuleNotFoundError:
         return (
             4,
@@ -182,9 +191,90 @@ def launch_tui() -> Tuple[int, str]:
         )
 
     class ImageGoNordTui(App):
+        CSS = """
+        Screen {
+            background: #0b132b;
+            color: #f3f4f6;
+        }
+
+        #hero {
+            background: #1c2541;
+            border: tall #3a506b;
+            color: #f7f9fb;
+            height: 5;
+            margin: 1 2 0 2;
+            padding: 0 2;
+            content-align: center middle;
+            text-style: bold;
+        }
+
+        #workspace {
+            margin: 1 2;
+            height: 1fr;
+        }
+
+        .panel {
+            background: #16213e;
+            border: round #4f709c;
+            padding: 1;
+        }
+
+        #left-panel {
+            width: 2fr;
+            margin-right: 1;
+        }
+
+        #right-panel {
+            width: 3fr;
+            margin-left: 1;
+        }
+
+        .title {
+            text-style: bold;
+            color: #9ad1ff;
+            margin-bottom: 1;
+        }
+
+        #status {
+            margin-top: 1;
+            border: heavy #5bc0be;
+            padding: 0 1;
+            color: #e9fff8;
+            min-height: 3;
+        }
+
+        #palette-preview {
+            margin-top: 1;
+            color: #dbeafe;
+            min-height: 7;
+        }
+
+        #action-row {
+            margin-top: 1;
+            height: auto;
+        }
+
+        #log {
+            margin-top: 1;
+            height: 1fr;
+            border: round #3a506b;
+            background: #0f1d35;
+        }
+
+        .hint {
+            color: #a5b4fc;
+            margin-top: 1;
+        }
+        """
+
         TITLE = "ImageGoNord CLI"
-        SUB_TITLE = "Interactive conversion"
-        BINDINGS = [("q", "quit", "Quit")]
+        SUB_TITLE = "Studio TUI"
+        BINDINGS = [
+            ("q", "quit", "Quit"),
+            ("c", "convert", "Convert"),
+            ("r", "reset_form", "Reset"),
+            ("p", "show_palettes", "Palettes"),
+        ]
 
         def __init__(self) -> None:
             super().__init__()
@@ -192,59 +282,48 @@ def launch_tui() -> Tuple[int, str]:
                 [palette.name for palette in get_palette_list()]
             )
 
-        def action_quit(self) -> None:
-            self.exit()
+        def _selected_palette_name(self) -> str:
+            palette_select = self.query_one("#palette-select", Select)
+            value = palette_select.value
+            return str(value) if value else "nord"
 
-        def compose(self) -> ComposeResult:
-            palette_options = [(name, name) for name in self._palette_names]
-            default_palette = self._palette_names[0] if self._palette_names else "nord"
+        def _get_palette_preview_text(self, palette_name: str) -> str:
+            selected_palette = search_palette_by_name(palette_name)
+            if selected_palette is None:
+                return "Palette details unavailable"
 
-            yield Header()
-            with Vertical(id="layout"):
-                yield Static("ImageGoNord Terminal UI", id="title")
-                yield Static("Fill the fields and run conversion", id="hint")
-                yield Input(placeholder="Input image path", id="input-path")
-                yield Input(value="nord.png", id="output-path")
-                yield Select(
-                    palette_options,
-                    value=default_palette,
-                    id="palette-select",
-                    allow_blank=False,
-                    prompt="Choose a palette",
-                )
-                yield Input(
-                    placeholder="Optional colors (comma separated)",
-                    id="colors-input",
-                )
-                yield Checkbox("Enable blur", value=False, id="blur-check")
-                yield Checkbox(
-                    "Disable average algorithm",
-                    value=False,
-                    id="no-avg-check",
-                )
-                yield Button("Convert", id="convert-button", variant="primary")
-                yield Button("Show palettes", id="palettes-button")
-                yield Static("Ready", id="status")
-            yield Footer()
+            colors = sorted([color.name for color in selected_palette.colors])
+            color_lines = "\n".join([f"- {name}" for name in colors])
+            return (
+                f"Palette: {selected_palette.name}\n"
+                f"Colors: {len(colors)}\n"
+                f"{color_lines}"
+            )
 
-        def on_button_pressed(self, event: Button.Pressed) -> None:
-            if event.button.id == "palettes-button":
-                names = ", ".join(self._palette_names) if self._palette_names else "none"
-                self.query_one("#status", Static).update(f"Available palettes: {names}")
-                return
+        def _write_status(self, message: str, *, is_error: bool = False) -> None:
+            status_widget = self.query_one("#status", Static)
+            prefix = "Error" if is_error else "Status"
+            status_widget.update(f"{prefix}: {message}")
 
-            if event.button.id != "convert-button":
-                return
+            log_widget = self.query_one("#log", RichLog)
+            tone = "[red]" if is_error else "[green]"
+            log_widget.write(f"{tone}{prefix}[/] {message}")
 
+        def _refresh_palette_preview(self) -> None:
+            palette_name = self._selected_palette_name()
+            preview = self._get_palette_preview_text(palette_name)
+            self.query_one("#palette-preview", Static).update(preview)
+
+        def _run_conversion(self) -> None:
             input_path = self.query_one("#input-path", Input).value.strip()
             output_path = self.query_one("#output-path", Input).value.strip() or "nord.png"
-            palette_select = self.query_one("#palette-select", Select)
-            palette = str(palette_select.value) if palette_select.value else "nord"
+            palette = self._selected_palette_name()
             raw_colors = self.query_one("#colors-input", Input).value
             colors = [value.strip() for value in raw_colors.split(",") if value.strip()]
             blur = self.query_one("#blur-check", Checkbox).value
             no_avg = self.query_one("#no-avg-check", Checkbox).value
 
+            self._write_status("Running conversion...")
             status, result = convert_image_from_tui(
                 colors=colors,
                 disable_avg_pixels=no_avg,
@@ -254,11 +333,98 @@ def launch_tui() -> Tuple[int, str]:
                 palette=palette,
             )
             if status == 0:
-                self.query_one("#status", Static).update(result["message"])
+                self._write_status(result["message"])
             else:
-                self.query_one("#status", Static).update(
-                    f"Error ({status}): {result['message']}"
-                )
+                self._write_status(f"({status}) {result['message']}", is_error=True)
+
+        def action_convert(self) -> None:
+            self._run_conversion()
+
+        def action_reset_form(self) -> None:
+            self.query_one("#input-path", Input).value = ""
+            self.query_one("#output-path", Input).value = "nord.png"
+            self.query_one("#colors-input", Input).value = ""
+            self.query_one("#blur-check", Checkbox).value = False
+            self.query_one("#no-avg-check", Checkbox).value = False
+            self._refresh_palette_preview()
+            self._write_status("Form reset")
+
+        def action_show_palettes(self) -> None:
+            names = ", ".join(self._palette_names) if self._palette_names else "none"
+            self._write_status(f"Available palettes: {names}")
+
+        def action_quit(self) -> None:
+            self.exit()
+
+        def compose(self) -> ComposeResult:
+            palette_options = [(name, name) for name in self._palette_names]
+            default_palette = self._palette_names[0] if self._palette_names else "nord"
+
+            yield Header()
+            yield Static("ImageGoNord Studio | Fast terminal image stylizer", id="hero")
+            with Horizontal(id="workspace"):
+                with Vertical(id="left-panel", classes="panel"):
+                    yield Static("Conversion Controls", classes="title")
+                    yield Input(placeholder="Input image path", id="input-path")
+                    yield Input(value="nord.png", id="output-path")
+                    yield Select(
+                        palette_options,
+                        value=default_palette,
+                        id="palette-select",
+                        allow_blank=False,
+                        prompt="Choose a palette",
+                    )
+                    yield Input(
+                        placeholder="Optional colors (comma separated)",
+                        id="colors-input",
+                    )
+                    yield Checkbox("Enable blur", value=False, id="blur-check")
+                    yield Checkbox(
+                        "Disable average algorithm",
+                        value=False,
+                        id="no-avg-check",
+                    )
+                    with Horizontal(id="action-row"):
+                        yield Button("Convert", id="convert-button", variant="primary")
+                        yield Button("Reset", id="reset-button")
+                        yield Button("Palettes", id="palettes-button")
+                    yield Static("Status: Ready", id="status")
+
+                with Vertical(id="right-panel", classes="panel"):
+                    yield Static("Palette Preview", classes="title")
+                    yield Static("", id="palette-preview")
+                    yield Static("Activity", classes="title")
+                    yield RichLog(id="log", wrap=True, highlight=True, markup=True)
+                    yield Static(
+                        "Shortcuts: c convert | r reset | p palettes | q quit",
+                        classes="hint",
+                    )
+            yield Footer()
+
+        def on_mount(self) -> None:
+            self._refresh_palette_preview()
+            self._write_status("Ready")
+
+        def on_select_changed(self, event: Select.Changed) -> None:
+            if event.select.id != "palette-select":
+                return
+            self._refresh_palette_preview()
+            self._write_status(
+                f"Palette selected: {self._selected_palette_name()}"
+            )
+
+        def on_button_pressed(self, event: Button.Pressed) -> None:
+            if event.button.id == "reset-button":
+                self.action_reset_form()
+                return
+
+            if event.button.id == "palettes-button":
+                self.action_show_palettes()
+                return
+
+            if event.button.id != "convert-button":
+                return
+            self._run_conversion()
 
     app = ImageGoNordTui()
     app.run()
