@@ -2,6 +2,8 @@
 
 `batch` builds a dry-run conversion plan from an input directory.
 
+By default the command is non-destructive and only generates a plan.
+
 ## Usage
 
 Basic dry-run:
@@ -28,6 +30,18 @@ Override output directory and palette in generated commands:
 python src/image_go_nord_client batch ./images --out-dir ./converted --palette monokai
 ```
 
+Execute conversions:
+
+```shell
+python src/image_go_nord_client batch ./images --apply
+```
+
+Execute conversions recursively with conversion options:
+
+```shell
+python src/image_go_nord_client batch ./images --recursive --apply --palette monokai --colors=Accent,Base --blur --no-avg
+```
+
 ## Supported Extensions
 
 - `.png`
@@ -40,12 +54,14 @@ python src/image_go_nord_client batch ./images --out-dir ./converted --palette m
 
 ## Current Scope
 
-- Builds a conversion plan only (dry-run)
-- Validates input directory
+- Supports dry-run planning and execute mode (`--apply`)
+- Validates input directory, palette, and selected colors
 - Generates command previews for each detected image
-- Does not execute conversions yet
+- Reports per-file conversion results in JSON mode when executing
 
 ## Exit Codes
 
-- `0`: plan generated successfully
-- `2`: validation error (for example missing input directory)
+- `0`: plan generated successfully, or all apply conversions succeeded
+- `2`: validation error (for example missing input directory or invalid colors)
+- `4`: dependency error (ImageGoNord missing for apply)
+- `5`: one or more apply conversions failed

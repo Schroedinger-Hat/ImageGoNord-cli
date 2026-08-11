@@ -208,6 +208,23 @@ python src/image_go_nord_client batch ./images --out-dir ./converted --palette m
 
 Current `batch` behavior is a dry-run planner only. It does not convert files yet.
 
+Execute conversion for the detected files:
+
+```shell
+python src/image_go_nord_client batch ./images --apply
+```
+
+Execute conversion with explicit conversion options:
+
+```shell
+python src/image_go_nord_client batch ./images --apply --palette monokai --colors=Accent,Base --blur --no-avg
+```
+
+When `--apply` is used, the command returns:
+
+- `0` when all files are converted successfully
+- `5` when one or more files fail to convert (with per-file details in JSON mode)
+
 ### Contributing
 - Follow the contributor guidelines
 - Follow the code style / requirements
