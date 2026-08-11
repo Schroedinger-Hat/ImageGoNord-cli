@@ -106,7 +106,7 @@ class ClientShould(UnitTestBaseClass):
         )
 
         payload = json.loads(self.mocked_stdout.getvalue().strip())
-        self.assertEqual(1, result)
+        self.assertEqual(2, result)
         self.assertFalse(payload["ok"])
         self.assertRegex(payload["request_id"], r"^[0-9a-f-]{36}$")
         self.assertEqual("3.0", payload["contract_version"])

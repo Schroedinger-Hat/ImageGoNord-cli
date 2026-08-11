@@ -113,7 +113,7 @@ def main(argv: Union[list[str], None] = None):
                 },
             ),
         )
-        return 1
+        return 2
 
     logging.info("Use palette set: %s", selected_palette.name.capitalize())
     go_nord.reset_palette()
@@ -140,7 +140,7 @@ def main(argv: Union[list[str], None] = None):
                 },
             ),
         )
-        return 1
+        return 2
 
     selected_colors = arguments.colors if arguments.colors else all_colors_names
     for color in selected_colors:
