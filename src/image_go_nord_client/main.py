@@ -21,6 +21,7 @@ from image_go_nord_client import (
     search_palette_by_name,
 )
 from image_go_nord_client.tui import launch_tui as _launch_tui
+from image_go_nord_client.tui import run_tui_action as _run_tui_action_helper
 
 __ALL__ = ["main"]
 CONTRACT_VERSION = "3.0"
@@ -129,6 +130,44 @@ def _run_palette_command(argv: list[str], request_id: str) -> int:
 
 def _run_tui_command(argv: list[str], request_id: str) -> int:
     arguments = parse_tui_arguments(argv)
+
+    if arguments.action is not None:
+        status, result = _run_tui_action_helper(arguments.action)
+        if arguments.output_format == "json":
+            if status == 0:
+                print(
+                    json.dumps(
+                        _json_response(
+                            request_id=request_id,
+                            ok=True,
+                            result={
+                                "action": arguments.action,
+                                "mode": "tui-action",
+                                **result,
+                            },
+                        ),
+                        sort_keys=True,
+                    )
+                )
+            else:
+                print(
+                    json.dumps(
+                        _json_response(
+                            request_id=request_id,
+                            ok=False,
+                            error={
+                                "code": "E_VALIDATION",
+                                "message": result["message"],
+                            },
+                        ),
+                        sort_keys=True,
+                    )
+                )
+        else:
+            print(result["message"])
+
+        return status
+
     status, message = _launch_tui()
 
     if status == 0:

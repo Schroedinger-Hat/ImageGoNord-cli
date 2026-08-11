@@ -189,6 +189,15 @@ def parse_tui_arguments(argv: list[str]) -> argparse.Namespace:
         help="specify output format",
     )
 
+    parser.add_argument(
+        "--action",
+        type=str,
+        dest="action",
+        choices=["convert-image", "browse-palettes", "batch-conversion"],
+        default=None,
+        help="run a TUI action without launching the interactive app",
+    )
+
     return parser.parse_args(normalize_argv(argv)[1:])
 
 

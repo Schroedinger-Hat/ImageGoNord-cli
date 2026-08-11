@@ -129,6 +129,18 @@ TUI status as JSON envelope:
 python src/image_go_nord_client tui --format=json
 ```
 
+Run a TUI action without opening the full-screen interface:
+
+```shell
+python src/image_go_nord_client tui --action=browse-palettes --format=json
+```
+
+Available actions:
+
+- `convert-image`
+- `browse-palettes`
+- `batch-conversion`
+
 The TUI command is powered by [Textual](https://textual.textualize.io/).
 If Textual is not installed, the command returns exit code `4` and a dependency error.
 
