@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from image_go_nord_client.main import main
 
@@ -89,3 +90,76 @@ class ClientShould(UnitTestBaseClass):
         self.assertIn("image-go-nord-client --img=", output)
         self.assertIn("--palette=nord", output)
         self.mocked_go_nord.assert_not_called()
+
+    def test_run_batch_apply_successfully_in_json_mode(self):
+        with TemporaryDirectory() as tmp_dir:
+            base_path = Path(tmp_dir)
+            (base_path / "one.png").write_text("x", encoding="utf-8")
+            (base_path / "two.jpg").write_text("x", encoding="utf-8")
+
+            result = main(
+                argv=[
+                    "image-go-nord-client",
+                    "batch",
+                    str(base_path),
+                    "--apply",
+                    "--format=json",
+                ]
+            )
+
+        payload = json.loads(self.mocked_stdout.getvalue().strip())
+        self.assertEqual(0, result)
+        self.assertTrue(payload["ok"])
+        self.assertEqual(False, payload["result"]["dry_run"])
+        self.assertEqual(2, payload["result"]["summary"]["converted"])
+        self.assertEqual(0, payload["result"]["summary"]["failed"])
+        self.assertEqual(2, len(payload["result"]["files"]))
+
+    def test_return_5_when_one_or_more_batch_apply_conversions_fail(self):
+        with TemporaryDirectory() as tmp_dir:
+            base_path = Path(tmp_dir)
+            (base_path / "one.png").write_text("x", encoding="utf-8")
+            (base_path / "two.jpg").write_text("x", encoding="utf-8")
+
+            self.mock_gn_instance.convert_image.side_effect = [
+                RuntimeError("boom"),
+                None,
+            ]
+
+            result = main(
+                argv=[
+                    "image-go-nord-client",
+                    "batch",
+                    str(base_path),
+                    "--apply",
+                    "--format=json",
+                ]
+            )
+
+        payload = json.loads(self.mocked_stdout.getvalue().strip())
+        self.assertEqual(5, result)
+        self.assertFalse(payload["ok"])
+        self.assertEqual("E_CONVERSION_FAILED", payload["error"]["code"])
+        self.assertEqual(1, payload["result"]["summary"]["converted"])
+        self.assertEqual(1, payload["result"]["summary"]["failed"])
+
+    def test_return_4_when_batch_apply_dependency_is_missing(self):
+        with TemporaryDirectory() as tmp_dir:
+            base_path = Path(tmp_dir)
+            (base_path / "one.png").write_text("x", encoding="utf-8")
+
+            with patch("image_go_nord_client.main.GoNord", None):
+                result = main(
+                    argv=[
+                        "image-go-nord-client",
+                        "batch",
+                        str(base_path),
+                        "--apply",
+                        "--format=json",
+                    ]
+                )
+
+        payload = json.loads(self.mocked_stdout.getvalue().strip())
+        self.assertEqual(4, result)
+        self.assertFalse(payload["ok"])
+        self.assertEqual("E_DEPENDENCY", payload["error"]["code"])

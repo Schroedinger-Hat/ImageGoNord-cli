@@ -290,11 +290,43 @@ def parse_batch_arguments(argv: list[str]) -> argparse.Namespace:
     )
 
     parser.add_argument(
+        "--apply",
+        action="store_true",
+        dest="apply",
+        default=False,
+        help="execute conversions instead of only printing a dry-run plan",
+    )
+
+    parser.add_argument(
         "--palette",
         type=str,
         dest="palette",
         default="nord",
         help="palette to use in generated convert commands",
+    )
+
+    parser.add_argument(
+        "--colors",
+        type=lambda value: list(value.split(",")),
+        dest="colors",
+        default=[],
+        help="comma-separated colors to use for conversion",
+    )
+
+    parser.add_argument(
+        "--blur",
+        action="store_true",
+        dest="enable_blur",
+        default=False,
+        help="enable blur for conversion",
+    )
+
+    parser.add_argument(
+        "--no-avg",
+        action="store_true",
+        dest="disable_avg_pixels",
+        default=False,
+        help="disable average pixel optimization for conversion",
     )
 
     parser.add_argument(

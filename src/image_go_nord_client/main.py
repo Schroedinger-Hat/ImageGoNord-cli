@@ -54,6 +54,9 @@ def _json_response(
         "request_id": request_id,
     }
 
+    if result is not None:
+        payload["result"] = result
+
     if ok:
         payload["result"] = result or {}
     else:
@@ -283,24 +286,35 @@ def _run_batch_command(argv: list[str], request_id: str) -> int:
     plan = []
     for image_file in image_files:
         out_path = _build_output_path(output_dir, image_file)
+        command_parts = [
+            "image-go-nord-client",
+            f"--img={image_file}",
+            f"--out={out_path}",
+            f"--palette={arguments.palette}",
+        ]
+        if arguments.colors:
+            command_parts.append(f"--colors={','.join(arguments.colors)}")
+        if arguments.enable_blur:
+            command_parts.append("--blur")
+        if arguments.disable_avg_pixels:
+            command_parts.append("--no-avg")
+
         plan.append(
             {
                 "input": str(image_file),
                 "output": str(out_path),
-                "command": (
-                    "image-go-nord-client "
-                    f"--img={image_file} "
-                    f"--out={out_path} "
-                    f"--palette={arguments.palette}"
-                ),
+                "command": " ".join(command_parts),
             }
         )
 
     result = {
-        "dry_run": True,
+        "dry_run": not arguments.apply,
         "input_dir": str(input_dir),
         "output_dir": str(output_dir),
         "palette": arguments.palette,
+        "colors": arguments.colors,
+        "enable_blur": arguments.enable_blur,
+        "disable_avg_pixels": arguments.disable_avg_pixels,
         "recursive": arguments.recursive,
         "summary": {
             "images_detected": len(image_files),
@@ -308,6 +322,136 @@ def _run_batch_command(argv: list[str], request_id: str) -> int:
         },
         "plan": plan,
     }
+
+    if arguments.apply:
+        if GoNord is None:
+            message = (
+                "ImageGoNord package is required to run batch apply. "
+                "Install dependencies from requirements.txt."
+            )
+            if arguments.output_format == "json":
+                print(
+                    json.dumps(
+                        _json_response(
+                            request_id=request_id,
+                            ok=False,
+                            error={
+                                "code": "E_DEPENDENCY",
+                                "message": message,
+                            },
+                            result=result,
+                        ),
+                        sort_keys=True,
+                    )
+                )
+            else:
+                logging.error(message)
+
+            return 4
+
+        selected_palette = get_palette_dict().get(arguments.palette)
+        if selected_palette is None:
+            message = f"No palette found with the name {arguments.palette}"
+            if arguments.output_format == "json":
+                print(
+                    json.dumps(
+                        _json_response(
+                            request_id=request_id,
+                            ok=False,
+                            error={
+                                "code": "E_PALETTE_NOT_FOUND",
+                                "message": message,
+                            },
+                            result=result,
+                        ),
+                        sort_keys=True,
+                    )
+                )
+            else:
+                logging.warning(message)
+
+            return 2
+
+        all_colors_names = sorted([color.name for color in selected_palette.colors])
+        if not set(arguments.colors).issubset(set(all_colors_names)):
+            message = (
+                f"Color {arguments.colors} not found, "
+                f"possible colors are {all_colors_names}"
+            )
+            if arguments.output_format == "json":
+                print(
+                    json.dumps(
+                        _json_response(
+                            request_id=request_id,
+                            ok=False,
+                            error={
+                                "code": "E_VALIDATION",
+                                "message": message,
+                            },
+                            result=result,
+                        ),
+                        sort_keys=True,
+                    )
+                )
+            else:
+                logging.warning(message)
+
+            return 2
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+        selected_colors = arguments.colors if arguments.colors else all_colors_names
+        file_results = []
+
+        for step in plan:
+            file_status = {"input": step["input"], "output": step["output"], "ok": True}
+            try:
+                go_nord = GoNord()
+                if arguments.enable_blur:
+                    go_nord.enable_gaussian_blur()
+                if arguments.disable_avg_pixels:
+                    go_nord.disable_avg_algorithm()
+
+                go_nord.reset_palette()
+                go_nord.set_palette_lookup_path(str(selected_palette.path) + "/")
+                for color in selected_colors:
+                    go_nord.add_file_to_palette(str(color) + ".txt")
+
+                image = go_nord.open_image(step["input"])
+                go_nord.convert_image(image, save_path=step["output"])
+            except Exception as exc:
+                file_status["ok"] = False
+                file_status["error"] = str(exc)
+
+            file_results.append(file_status)
+
+        converted = len([item for item in file_results if item["ok"]])
+        failed = len(file_results) - converted
+        result["files"] = file_results
+        result["summary"]["converted"] = converted
+        result["summary"]["failed"] = failed
+
+        if failed > 0:
+            if arguments.output_format == "json":
+                print(
+                    json.dumps(
+                        _json_response(
+                            request_id=request_id,
+                            ok=False,
+                            error={
+                                "code": "E_CONVERSION_FAILED",
+                                "message": "One or more files failed during batch apply",
+                            },
+                            result=result,
+                        ),
+                        sort_keys=True,
+                    )
+                )
+            else:
+                print("batch apply completed with failures")
+                print(f"- converted: {converted}")
+                print(f"- failed: {failed}")
+
+            return 5
 
     if arguments.output_format == "json":
         print(
@@ -321,12 +465,15 @@ def _run_batch_command(argv: list[str], request_id: str) -> int:
             )
         )
     else:
-        print("batch dry-run summary")
+        print("batch apply summary" if arguments.apply else "batch dry-run summary")
         print(f"- input_dir: {result['input_dir']}")
         print(f"- output_dir: {result['output_dir']}")
         print(f"- recursive: {result['recursive']}")
         print(f"- palette: {result['palette']}")
         print(f"- images_detected: {result['summary']['images_detected']}")
+        if arguments.apply:
+            print(f"- converted: {result['summary'].get('converted', 0)}")
+            print(f"- failed: {result['summary'].get('failed', 0)}")
 
         if plan:
             print("planned commands:")
