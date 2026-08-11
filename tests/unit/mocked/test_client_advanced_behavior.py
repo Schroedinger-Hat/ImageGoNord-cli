@@ -1,5 +1,5 @@
 import json
-from unittest.mock import ANY
+from unittest.mock import ANY, patch
 
 from image_go_nord_client.main import main
 
@@ -111,3 +111,38 @@ class ClientShould(UnitTestBaseClass):
         self.assertRegex(payload["request_id"], r"^[0-9a-f-]{36}$")
         self.assertEqual("3.0", payload["contract_version"])
         self.assertEqual("E_PALETTE_NOT_FOUND", payload["error"]["code"])
+
+    def test_json_output_when_dependency_is_missing(self):
+        with patch("image_go_nord_client.main.GoNord", None):
+            result = main(
+                argv=[
+                    "image-go-nord-client",
+                    "--img=input-missing-dep.png",
+                    "--format=json",
+                ]
+            )
+
+        payload = json.loads(self.mocked_stdout.getvalue().strip())
+        self.assertEqual(4, result)
+        self.assertFalse(payload["ok"])
+        self.assertRegex(payload["request_id"], r"^[0-9a-f-]{36}$")
+        self.assertEqual("3.0", payload["contract_version"])
+        self.assertEqual("E_INTERNAL", payload["error"]["code"])
+
+    def test_json_output_when_conversion_fails(self):
+        self.mock_gn_instance.convert_image.side_effect = RuntimeError("boom")
+
+        result = main(
+            argv=[
+                "image-go-nord-client",
+                "--img=input-failure.png",
+                "--format=json",
+            ]
+        )
+
+        payload = json.loads(self.mocked_stdout.getvalue().strip())
+        self.assertEqual(3, result)
+        self.assertFalse(payload["ok"])
+        self.assertRegex(payload["request_id"], r"^[0-9a-f-]{36}$")
+        self.assertEqual("3.0", payload["contract_version"])
+        self.assertEqual("E_CONVERSION_FAILED", payload["error"]["code"])

@@ -59,10 +59,23 @@ def main(argv: Union[list[str], None] = None):
         logging.basicConfig(level=logging.CRITICAL)
 
     if GoNord is None:
-        raise RuntimeError(
+        message = (
             "ImageGoNord package is required to run this command. "
             "Install dependencies from requirements.txt."
         )
+        logging.error(message)
+        _write_json(
+            arguments,
+            _json_response(
+                request_id=request_id,
+                ok=False,
+                error={
+                    "code": "E_INTERNAL",
+                    "message": message,
+                },
+            ),
+        )
+        return 4
 
     go_nord = GoNord()
 
@@ -133,7 +146,23 @@ def main(argv: Union[list[str], None] = None):
     for color in selected_colors:
         go_nord.add_file_to_palette(str(color) + ".txt")
 
-    go_nord.convert_image(image, save_path=output_image_path)
+    try:
+        go_nord.convert_image(image, save_path=output_image_path)
+    except Exception:
+        message = "Failed to convert image"
+        logging.exception(message)
+        _write_json(
+            arguments,
+            _json_response(
+                request_id=request_id,
+                ok=False,
+                error={
+                    "code": "E_CONVERSION_FAILED",
+                    "message": message,
+                },
+            ),
+        )
+        return 3
 
     _write_json(
         arguments,
