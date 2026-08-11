@@ -1,4 +1,5 @@
 from pathlib import Path
+from textwrap import dedent
 from typing import Any, Dict, Optional, Tuple
 
 try:
@@ -201,10 +202,10 @@ def launch_tui() -> Tuple[int, str]:
             background: #1c2541;
             border: tall #3a506b;
             color: #f7f9fb;
-            height: 5;
+            height: 10;
             margin: 1 2 0 2;
-            padding: 0 2;
-            content-align: center middle;
+            padding: 1 2;
+            content-align: left middle;
             text-style: bold;
         }
 
@@ -281,6 +282,18 @@ def launch_tui() -> Tuple[int, str]:
             self._palette_names = sorted(
                 [palette.name for palette in get_palette_list()]
             )
+            self._hero_banner = dedent(
+                r"""
+                  ___                                 _____       _   _               _
+                 |_ _|_ __ ___   __ _  __ _  ___     / ____|___   | \ | | ___  _ __ __| |
+                  | || '_ ` _ \ / _` |/ _` |/ _ \   | |  _ / _ \  |  \| |/ _ \| '__/ _` |
+                  | || | | | | | (_| | (_| |  __/   | |_| | (_) | | |\  | (_) | | | (_| |
+                 |___|_| |_| |_|\__,_|\__, |\___|    \_____\___/  |_| \_|\___/|_|  \__,_|
+                                       |___/
+
+                  Fast terminal image stylizer
+                """
+            ).strip("\n")
 
         def _selected_palette_name(self) -> str:
             palette_select = self.query_one("#palette-select", Select)
@@ -361,7 +374,7 @@ def launch_tui() -> Tuple[int, str]:
             default_palette = self._palette_names[0] if self._palette_names else "nord"
 
             yield Header()
-            yield Static("ImageGoNord Studio | Fast terminal image stylizer", id="hero")
+            yield Static(self._hero_banner, id="hero")
             with Horizontal(id="workspace"):
                 with Vertical(id="left-panel", classes="panel"):
                     yield Static("Conversion Controls", classes="title")
