@@ -331,6 +331,19 @@ def _print_batch_apply_progress_step(
         console.print(f"[red][{index}/{total}] failed[/red] {short_name}: {error}")
 
 
+def _create_batch_rich_progress(total: int):
+    from rich.progress import BarColumn, Progress, TextColumn
+
+    progress = Progress(
+        TextColumn("[bold cyan]batch apply[/bold cyan]"),
+        BarColumn(),
+        TextColumn("{task.completed}/{task.total}"),
+        transient=True,
+    )
+    task_id = progress.add_task("batch apply", total=total)
+    return progress, task_id
+
+
 def _print_doctor_report(*, checks: list[dict], summary: dict, ok: bool) -> None:
     status_line = "doctor checks passed" if ok else "doctor checks failed"
     if not _is_rich_available():
@@ -547,39 +560,49 @@ def _run_batch_command(argv: list[str], request_id: str) -> int:
         output_dir.mkdir(parents=True, exist_ok=True)
         selected_colors = arguments.colors if arguments.colors else all_colors_names
         file_results = []
-        if arguments.output_format == "text":
+        rich_progress = None
+        rich_task_id = None
+        if arguments.output_format == "text" and _is_rich_available():
+            rich_progress, rich_task_id = _create_batch_rich_progress(len(plan))
+            rich_progress.start()
+        elif arguments.output_format == "text":
             _print_batch_apply_progress_start(len(plan))
+        try:
+            for index, step in enumerate(plan, start=1):
+                file_status = {"input": step["input"], "output": step["output"], "ok": True}
+                try:
+                    go_nord = GoNord()
+                    if arguments.enable_blur:
+                        go_nord.enable_gaussian_blur()
+                    if arguments.disable_avg_pixels:
+                        go_nord.disable_avg_algorithm()
 
-        for index, step in enumerate(plan, start=1):
-            file_status = {"input": step["input"], "output": step["output"], "ok": True}
-            try:
-                go_nord = GoNord()
-                if arguments.enable_blur:
-                    go_nord.enable_gaussian_blur()
-                if arguments.disable_avg_pixels:
-                    go_nord.disable_avg_algorithm()
+                    go_nord.reset_palette()
+                    go_nord.set_palette_lookup_path(str(selected_palette.path) + "/")
+                    for color in selected_colors:
+                        go_nord.add_file_to_palette(str(color) + ".txt")
 
-                go_nord.reset_palette()
-                go_nord.set_palette_lookup_path(str(selected_palette.path) + "/")
-                for color in selected_colors:
-                    go_nord.add_file_to_palette(str(color) + ".txt")
+                    image = go_nord.open_image(step["input"])
+                    Path(step["output"]).parent.mkdir(parents=True, exist_ok=True)
+                    go_nord.convert_image(image, save_path=step["output"])
+                except Exception as exc:
+                    file_status["ok"] = False
+                    file_status["error"] = str(exc)
 
-                image = go_nord.open_image(step["input"])
-                Path(step["output"]).parent.mkdir(parents=True, exist_ok=True)
-                go_nord.convert_image(image, save_path=step["output"])
-            except Exception as exc:
-                file_status["ok"] = False
-                file_status["error"] = str(exc)
-
-            file_results.append(file_status)
-            if arguments.output_format == "text":
-                _print_batch_apply_progress_step(
-                    index=index,
-                    total=len(plan),
-                    input_path=step["input"],
-                    ok=file_status["ok"],
-                    error=file_status.get("error"),
-                )
+                file_results.append(file_status)
+                if arguments.output_format == "text" and rich_progress is not None:
+                    rich_progress.update(rich_task_id, advance=1)
+                elif arguments.output_format == "text":
+                    _print_batch_apply_progress_step(
+                        index=index,
+                        total=len(plan),
+                        input_path=step["input"],
+                        ok=file_status["ok"],
+                        error=file_status.get("error"),
+                    )
+        finally:
+            if rich_progress is not None:
+                rich_progress.stop()
 
         converted = len([item for item in file_results if item["ok"]])
         failed = len(file_results) - converted

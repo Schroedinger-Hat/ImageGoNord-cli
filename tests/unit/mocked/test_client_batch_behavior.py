@@ -251,6 +251,50 @@ class ClientShould(UnitTestBaseClass):
         self.assertIn("boom", output)
         self.assertIn("[2/2] ok", output)
 
+    def test_use_rich_progress_bar_when_available(self):
+        class _FakeProgress:
+            def __init__(self):
+                self.started = False
+                self.stopped = False
+                self.updates = []
+
+            def start(self):
+                self.started = True
+
+            def update(self, task_id, advance):
+                self.updates.append((task_id, advance))
+
+            def stop(self):
+                self.stopped = True
+
+        fake_progress = _FakeProgress()
+
+        with TemporaryDirectory() as tmp_dir:
+            base_path = Path(tmp_dir)
+            (base_path / "one.png").write_text("x", encoding="utf-8")
+            (base_path / "two.jpg").write_text("x", encoding="utf-8")
+
+            with patch("image_go_nord_client.main._is_rich_available", return_value=True):
+                with patch(
+                    "image_go_nord_client.main._create_batch_rich_progress",
+                    return_value=(fake_progress, "task-1"),
+                ) as mocked_factory:
+                    with patch("image_go_nord_client.main._print_batch_summary"):
+                        result = main(
+                            argv=[
+                                "image-go-nord-client",
+                                "batch",
+                                str(base_path),
+                                "--apply",
+                            ]
+                        )
+
+        self.assertEqual(0, result)
+        mocked_factory.assert_called_once_with(2)
+        self.assertTrue(fake_progress.started)
+        self.assertTrue(fake_progress.stopped)
+        self.assertEqual([("task-1", 1), ("task-1", 1)], fake_progress.updates)
+
     def test_return_4_when_batch_apply_dependency_is_missing(self):
         with TemporaryDirectory() as tmp_dir:
             base_path = Path(tmp_dir)
