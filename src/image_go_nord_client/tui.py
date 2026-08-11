@@ -182,7 +182,6 @@ def launch_tui() -> Tuple[int, str]:
             Header,
             Input,
             RichLog,
-            Select,
             Static,
         )
     except ModuleNotFoundError:
@@ -255,6 +254,17 @@ def launch_tui() -> Tuple[int, str]:
             height: auto;
         }
 
+        #palette-row {
+            height: auto;
+            margin-top: 1;
+            margin-bottom: 1;
+        }
+
+        #palette-input {
+            width: 1fr;
+            margin: 0 1;
+        }
+
         #log {
             margin-top: 1;
             height: 1fr;
@@ -275,6 +285,8 @@ def launch_tui() -> Tuple[int, str]:
             ("c", "convert", "Convert"),
             ("r", "reset_form", "Reset"),
             ("p", "show_palettes", "Palettes"),
+            ("[", "previous_palette", "Prev Palette"),
+            ("]", "next_palette", "Next Palette"),
         ]
 
         def __init__(self) -> None:
@@ -302,10 +314,22 @@ def launch_tui() -> Tuple[int, str]:
                 return self._palette_names[0]
             return "nord"
 
+        def _normalize_palette_name(self, value: str) -> str:
+            normalized = value.strip().lower()
+            return normalized or self._default_palette_name()
+
+        def _set_palette_name(self, palette_name: str) -> None:
+            self.query_one("#palette-input", Input).value = palette_name
+
         def _selected_palette_name(self) -> str:
-            palette_select = self.query_one("#palette-select", Select)
-            value = palette_select.value
-            return str(value) if value else "nord"
+            palette_value = self.query_one("#palette-input", Input).value
+            return self._normalize_palette_name(palette_value)
+
+        def _selected_palette_index(self) -> int:
+            palette_name = self._selected_palette_name()
+            if palette_name in self._palette_names:
+                return self._palette_names.index(palette_name)
+            return self._palette_names.index(self._default_palette_name())
 
         def _get_palette_preview_text(self, palette_name: str) -> str:
             selected_palette = search_palette_by_name(palette_name)
@@ -334,6 +358,17 @@ def launch_tui() -> Tuple[int, str]:
             preview = self._get_palette_preview_text(palette_name)
             self.query_one("#palette-preview", Static).update(preview)
 
+        def _cycle_palette(self, offset: int) -> None:
+            if not self._palette_names:
+                self._write_status("No palettes available", is_error=True)
+                return
+
+            next_index = (self._selected_palette_index() + offset) % len(self._palette_names)
+            next_palette = self._palette_names[next_index]
+            self._set_palette_name(next_palette)
+            self._refresh_palette_preview()
+            self._write_status(f"Palette selected: {next_palette}")
+
         def _run_conversion(self) -> None:
             input_path = self.query_one("#input-path", Input).value.strip()
             output_path = self.query_one("#output-path", Input).value.strip() or "nord.png"
@@ -360,13 +395,19 @@ def launch_tui() -> Tuple[int, str]:
         def action_convert(self) -> None:
             self._run_conversion()
 
+        def action_previous_palette(self) -> None:
+            self._cycle_palette(-1)
+
+        def action_next_palette(self) -> None:
+            self._cycle_palette(1)
+
         def action_reset_form(self) -> None:
             self.query_one("#input-path", Input).value = ""
             self.query_one("#output-path", Input).value = "nord.png"
             self.query_one("#colors-input", Input).value = ""
             self.query_one("#blur-check", Checkbox).value = False
             self.query_one("#no-avg-check", Checkbox).value = False
-            self.query_one("#palette-select", Select).value = self._default_palette_name()
+            self._set_palette_name(self._default_palette_name())
             self._refresh_palette_preview()
             self._write_status("Form reset")
 
@@ -378,7 +419,6 @@ def launch_tui() -> Tuple[int, str]:
             self.exit()
 
         def compose(self) -> ComposeResult:
-            palette_options = [(name, name) for name in self._palette_names]
             default_palette = self._default_palette_name()
 
             yield Header()
@@ -388,13 +428,11 @@ def launch_tui() -> Tuple[int, str]:
                     yield Static("Conversion Controls", classes="title")
                     yield Input(placeholder="Input image path", id="input-path")
                     yield Input(value="nord.png", id="output-path")
-                    yield Select(
-                        palette_options,
-                        value=default_palette,
-                        id="palette-select",
-                        allow_blank=False,
-                        prompt="Choose a palette",
-                    )
+                    yield Static("Palette", classes="title")
+                    with Horizontal(id="palette-row"):
+                        yield Button("<", id="prev-palette-button")
+                        yield Input(value=default_palette, id="palette-input")
+                        yield Button(">", id="next-palette-button")
                     yield Input(
                         placeholder="Optional colors (comma separated)",
                         id="colors-input",
@@ -417,7 +455,7 @@ def launch_tui() -> Tuple[int, str]:
                     yield Static("Activity", classes="title")
                     yield RichLog(id="log", wrap=True, highlight=True, markup=True)
                     yield Static(
-                        "Shortcuts: c convert | r reset | p palettes | q quit",
+                        "Shortcuts: [ prev | ] next | c convert | r reset | p palettes | q quit",
                         classes="hint",
                     )
             yield Footer()
@@ -426,15 +464,35 @@ def launch_tui() -> Tuple[int, str]:
             self._refresh_palette_preview()
             self._write_status("Ready")
 
-        def on_select_changed(self, event: Select.Changed) -> None:
-            if event.select.id != "palette-select":
+        def on_input_submitted(self, event: Input.Submitted) -> None:
+            if event.input.id != "palette-input":
+                return
+
+            palette_name = self._selected_palette_name()
+            self._set_palette_name(palette_name)
+            self._refresh_palette_preview()
+            if search_palette_by_name(palette_name) is None:
+                self._write_status(
+                    f"Unknown palette: {palette_name}. Press p for available palettes.",
+                    is_error=True,
+                )
+                return
+            self._write_status(f"Palette selected: {palette_name}")
+
+        def on_input_changed(self, event: Input.Changed) -> None:
+            if event.input.id != "palette-input":
                 return
             self._refresh_palette_preview()
-            self._write_status(
-                f"Palette selected: {self._selected_palette_name()}"
-            )
 
         def on_button_pressed(self, event: Button.Pressed) -> None:
+            if event.button.id == "prev-palette-button":
+                self.action_previous_palette()
+                return
+
+            if event.button.id == "next-palette-button":
+                self.action_next_palette()
+                return
+
             if event.button.id == "reset-button":
                 self.action_reset_form()
                 return
