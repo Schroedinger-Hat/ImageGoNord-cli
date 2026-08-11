@@ -220,7 +220,7 @@ The TUI command is powered by [Textual](https://textual.textualize.io/) and supp
 - automatic simple-mode fallback on narrow terminals
 - a last-conversion summary card with success/error badge, input, output, palette, and colors
 - quick path helpers: cycle discoverable input files (forward/backward) and derive output filename from input
-- refresh action to rescan and update discoverable input files
+- refresh action to rescan discoverable input files (and auto-fill the first match when input is empty)
 - in-app help overlay to discover controls without leaving the TUI
 - activity log feedback during each action
 - keyboard shortcuts: `h` help, `f` refresh inputs, `v` previous input, `n` next input, `d` derive output, `m` mode, `[` previous palette, `]` next palette, `c` convert, `r` reset, `p` palettes, `q` quit

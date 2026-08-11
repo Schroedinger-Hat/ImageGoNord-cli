@@ -389,14 +389,14 @@ def launch_tui() -> Tuple[int, str]:
                 right_panel.styles.width = "3fr"
                 mode_button.label = "Simple"
                 hint.update(
-                    "Shortcuts: h help | v prev input | n next input | d derive output | m mode | [ prev | ] next | c convert | r reset | p palettes | q quit"
+                    "Shortcuts: h help | f refresh | v prev input | n next input | d derive output | m mode | [ prev | ] next | c convert | r reset | p palettes | q quit"
                 )
             else:
                 right_panel.display = False
                 left_panel.styles.width = "1fr"
                 mode_button.label = "Studio"
                 hint.update(
-                    "Shortcuts: h help | v prev input | n next input | d derive output | m mode | [ prev | ] next | c convert | r reset | p palettes | q quit"
+                    "Shortcuts: h help | f refresh | v prev input | n next input | d derive output | m mode | [ prev | ] next | c convert | r reset | p palettes | q quit"
                 )
 
         def _build_help_text(self) -> str:
@@ -625,6 +625,15 @@ def launch_tui() -> Tuple[int, str]:
 
         def action_refresh_input_files(self) -> None:
             candidates = self._refresh_input_file_cache()
+            input_widget = self.query_one("#input-path", Input)
+            current_input = input_widget.value.strip()
+            if candidates and not current_input:
+                self._input_file_index = 0
+                input_widget.value = candidates[0]
+                self._write_status(
+                    f"Input cache refreshed: {len(candidates)} file(s) found. Selected: {candidates[0]}"
+                )
+                return
             self._write_status(f"Input cache refreshed: {len(candidates)} file(s) found")
 
         def action_toggle_help(self) -> None:
