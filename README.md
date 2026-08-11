@@ -165,6 +165,27 @@ Install Textual:
 pip install textual
 ```
 
+### Diagnostics (Doctor)
+
+Run environment diagnostics:
+
+```shell
+python src/image_go_nord_client doctor
+```
+
+Run diagnostics in JSON mode:
+
+```shell
+python src/image_go_nord_client doctor --format=json
+```
+
+Doctor currently validates:
+
+- Python runtime
+- ImageGoNord dependency availability
+- Palette inventory availability
+- Textual dependency availability (optional)
+
 ### Contributing
 - Follow the contributor guidelines
 - Follow the code style / requirements
