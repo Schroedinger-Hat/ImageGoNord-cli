@@ -9,6 +9,7 @@
 - Completed: batch dry-run and apply execution with deterministic error/exit semantics.
 - Completed: preserved recursive output folder mapping for batch conversions.
 - In progress: beautiful terminal output improvements (Rich tables for palette and batch text summaries).
+- In progress: apply progress indicators in batch text mode.
 - Next: richer terminal presentation (tables/progress/spinners), watch mode, analyze/benchmark/compare commands.
 
 ## Vision
