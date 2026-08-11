@@ -22,13 +22,32 @@ def _looks_like_legacy_argv(argv: list[str]) -> bool:
     return False
 
 
+def _translate_modern_argv_for_legacy(argv: list[str]) -> list[str]:
+    if not argv:
+        return argv
+
+    if argv[0] != "convert":
+        return argv
+
+    if len(argv) < 2:
+        return argv
+
+    image = argv[1]
+    if image.startswith("-"):
+        return argv
+
+    translated = [f"--img={image}"]
+    translated.extend(argv[2:])
+    return translated
+
+
 def _run_typer_app(argv: list[str]) -> int:
     import typer
 
     app = typer.Typer(
         help="Modern ImageGoNord CLI",
         no_args_is_help=True,
-        add_completion=False,
+        add_completion=True,
     )
 
     palette_app = typer.Typer(help="Palette management")
@@ -174,6 +193,7 @@ def run(argv: Optional[list[str]] = None) -> int:
         return legacy_main(["image-go-nord-client", *args])
 
     if not _is_typer_available():
-        return legacy_main(["image-go-nord-client", *args])
+        fallback_args = _translate_modern_argv_for_legacy(args)
+        return legacy_main(["image-go-nord-client", *fallback_args])
 
     return _run_typer_app(args)
