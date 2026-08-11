@@ -186,6 +186,28 @@ Doctor currently validates:
 - Palette inventory availability
 - Textual dependency availability (optional)
 
+### Batch Dry-Run
+
+Generate a batch conversion plan from a directory:
+
+```shell
+python src/image_go_nord_client batch ./images
+```
+
+Generate plan recursively and print JSON output:
+
+```shell
+python src/image_go_nord_client batch ./images --recursive --format=json
+```
+
+Set output directory and palette in the generated plan:
+
+```shell
+python src/image_go_nord_client batch ./images --out-dir ./converted --palette monokai
+```
+
+Current `batch` behavior is a dry-run planner only. It does not convert files yet.
+
 ### Contributing
 - Follow the contributor guidelines
 - Follow the code style / requirements
