@@ -1,5 +1,5 @@
-from main import main
 import sys
+from image_go_nord_client.ign import run
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(run())
