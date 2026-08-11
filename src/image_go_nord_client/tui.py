@@ -282,12 +282,25 @@ def launch_tui() -> Tuple[int, str]:
             color: #a5b4fc;
             margin-top: 1;
         }
+
+        #help-overlay {
+            layer: overlay;
+            width: auto;
+            height: auto;
+            max-width: 92;
+            background: #0f172a;
+            border: round #5e81ac;
+            padding: 1 2;
+            color: #e5e7eb;
+            offset: 4 3;
+        }
         """
 
         TITLE = "ImageGoNord CLI"
         SUB_TITLE = "Studio TUI"
         BINDINGS = [
             ("q", "quit", "Quit"),
+            ("h", "toggle_help", "Help"),
             ("c", "convert", "Convert"),
             ("r", "reset_form", "Reset"),
             ("p", "show_palettes", "Palettes"),
@@ -308,6 +321,7 @@ def launch_tui() -> Tuple[int, str]:
             self._manual_mode_override = False
             self._input_file_index = -1
             self._input_file_cache: list[str] = []
+            self._help_visible = False
             self._hero_banner = dedent(
                 r"""
                   ___                                 _____       _   _               _
@@ -369,15 +383,49 @@ def launch_tui() -> Tuple[int, str]:
                 right_panel.styles.width = "3fr"
                 mode_button.label = "Simple"
                 hint.update(
-                    "Shortcuts: m mode | [ prev | ] next | c convert | r reset | p palettes | q quit"
+                    "Shortcuts: h help | v prev input | n next input | d derive output | m mode | [ prev | ] next | c convert | r reset | p palettes | q quit"
                 )
             else:
                 right_panel.display = False
                 left_panel.styles.width = "1fr"
                 mode_button.label = "Studio"
                 hint.update(
-                    "Shortcuts: m mode | [ prev | ] next | c convert | r reset | p palettes | q quit"
+                    "Shortcuts: h help | v prev input | n next input | d derive output | m mode | [ prev | ] next | c convert | r reset | p palettes | q quit"
                 )
+
+        def _build_help_text(self) -> str:
+            return dedent(
+                """
+                ImageGoNord TUI Help
+
+                Core:
+                - h: toggle this help
+                - q: quit
+                - c: run conversion
+                - r: reset form
+
+                Input and output:
+                - v: previous discovered image
+                - n: next discovered image
+                - d: derive output name from input
+
+                Palette:
+                - [: previous palette
+                - ]: next palette
+                - type a palette prefix and press Enter
+                - p: list palette names in status log
+
+                Layout:
+                - m: switch between studio/simple mode
+                """
+            ).strip()
+
+        def _set_help_visible(self, visible: bool) -> None:
+            self._help_visible = visible
+            help_overlay = self.query_one("#help-overlay", Static)
+            help_overlay.display = visible
+            if visible:
+                help_overlay.update(self._build_help_text())
 
         def _normalize_palette_name(self, value: str) -> str:
             normalized = value.strip().lower()
@@ -568,6 +616,13 @@ def launch_tui() -> Tuple[int, str]:
         def action_convert(self) -> None:
             self._run_conversion()
 
+        def action_toggle_help(self) -> None:
+            self._set_help_visible(not self._help_visible)
+            if self._help_visible:
+                self._write_status("Help opened")
+            else:
+                self._write_status("Help closed")
+
         def action_next_input_file(self) -> None:
             candidates = self._discover_input_files()
             if not candidates:
@@ -658,6 +713,7 @@ def launch_tui() -> Tuple[int, str]:
                         yield Button("Prev Input", id="prev-input-button")
                         yield Button("Next Input", id="next-input-button")
                         yield Button("Derive Out", id="derive-output-button")
+                        yield Button("Help", id="help-button")
                         yield Button("Simple", id="mode-button")
                         yield Button("Palettes", id="palettes-button")
                     yield Static("Status: Ready", id="status")
@@ -670,14 +726,16 @@ def launch_tui() -> Tuple[int, str]:
                     yield Static("Activity", classes="title")
                     yield RichLog(id="log", wrap=True, highlight=True, markup=True)
                     yield Static(
-                        "Shortcuts: v prev input | n next input | d derive output | m mode | [ prev | ] next | c convert | r reset | p palettes | q quit",
+                        "Shortcuts: h help | v prev input | n next input | d derive output | m mode | [ prev | ] next | c convert | r reset | p palettes | q quit",
                         id="shortcut-hint",
                         classes="hint",
                     )
+            yield Static("", id="help-overlay")
             yield Footer()
 
         def on_mount(self) -> None:
             self._set_mode(not self._should_use_simple_mode(), manual=False)
+            self._set_help_visible(False)
             self._refresh_palette_preview()
             self._update_last_conversion()
             self._write_status("Ready")
@@ -725,6 +783,10 @@ def launch_tui() -> Tuple[int, str]:
             self._refresh_palette_preview()
 
         def on_button_pressed(self, event: Button.Pressed) -> None:
+            if event.button.id == "help-button":
+                self.action_toggle_help()
+                return
+
             if event.button.id == "prev-input-button":
                 self.action_previous_input_file()
                 return
