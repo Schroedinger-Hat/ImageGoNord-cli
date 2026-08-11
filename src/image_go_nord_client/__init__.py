@@ -268,6 +268,55 @@ def parse_doctor_arguments(argv: list[str]) -> argparse.Namespace:
     return parser.parse_args(normalize_argv(argv)[1:])
 
 
+def parse_batch_arguments(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Batch conversion (dry-run)",
+        add_help=True,
+        prog="image-go-nord-client batch",
+    )
+
+    parser.add_argument(
+        "input_dir",
+        type=str,
+        help="input directory with images to convert",
+    )
+
+    parser.add_argument(
+        "--recursive",
+        action="store_true",
+        dest="recursive",
+        default=False,
+        help="scan input directory recursively",
+    )
+
+    parser.add_argument(
+        "--palette",
+        type=str,
+        dest="palette",
+        default="nord",
+        help="palette to use in generated convert commands",
+    )
+
+    parser.add_argument(
+        "--out-dir",
+        type=str,
+        dest="output_dir",
+        default=None,
+        help="output directory for generated convert commands",
+    )
+
+    parser.add_argument(
+        "--format",
+        type=str,
+        dest="output_format",
+        choices=["text", "json"],
+        default="text",
+        help="specify output format",
+    )
+
+    return parser.parse_args(normalize_argv(argv)[1:])
+
+
 def get_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=__doc__,

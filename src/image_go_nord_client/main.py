@@ -5,6 +5,7 @@ import logging
 import sys
 import uuid
 from importlib.util import find_spec
+from pathlib import Path
 from typing import Union
 
 try:
@@ -17,6 +18,7 @@ from image_go_nord_client import (
     get_palette_list,
     normalize_argv,
     parse_arguments,
+    parse_batch_arguments,
     parse_doctor_arguments,
     parse_palette_arguments,
     parse_tui_arguments,
@@ -226,6 +228,114 @@ def _is_textual_available() -> bool:
     return find_spec("textual") is not None
 
 
+def _is_supported_image_file(path: Path) -> bool:
+    return path.suffix.lower() in {
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".bmp",
+        ".webp",
+        ".tiff",
+        ".gif",
+    }
+
+
+def _build_output_path(output_dir: Path, input_file: Path) -> Path:
+    return output_dir / f"{input_file.stem}-nord{input_file.suffix.lower()}"
+
+
+def _run_batch_command(argv: list[str], request_id: str) -> int:
+    arguments = parse_batch_arguments(argv)
+
+    input_dir = Path(arguments.input_dir).expanduser().resolve()
+    output_dir = (
+        Path(arguments.output_dir).expanduser().resolve()
+        if arguments.output_dir
+        else input_dir
+    )
+
+    if not input_dir.exists() or not input_dir.is_dir():
+        message = f"Input directory does not exist: {input_dir}"
+        if arguments.output_format == "json":
+            print(
+                json.dumps(
+                    _json_response(
+                        request_id=request_id,
+                        ok=False,
+                        error={
+                            "code": "E_VALIDATION",
+                            "message": message,
+                        },
+                    ),
+                    sort_keys=True,
+                )
+            )
+        else:
+            logging.error(message)
+
+        return 2
+
+    walk_iter = input_dir.rglob("*") if arguments.recursive else input_dir.glob("*")
+    image_files = sorted(
+        [path for path in walk_iter if path.is_file() and _is_supported_image_file(path)]
+    )
+
+    plan = []
+    for image_file in image_files:
+        out_path = _build_output_path(output_dir, image_file)
+        plan.append(
+            {
+                "input": str(image_file),
+                "output": str(out_path),
+                "command": (
+                    "image-go-nord-client "
+                    f"--img={image_file} "
+                    f"--out={out_path} "
+                    f"--palette={arguments.palette}"
+                ),
+            }
+        )
+
+    result = {
+        "dry_run": True,
+        "input_dir": str(input_dir),
+        "output_dir": str(output_dir),
+        "palette": arguments.palette,
+        "recursive": arguments.recursive,
+        "summary": {
+            "images_detected": len(image_files),
+            "planned_conversions": len(plan),
+        },
+        "plan": plan,
+    }
+
+    if arguments.output_format == "json":
+        print(
+            json.dumps(
+                _json_response(
+                    request_id=request_id,
+                    ok=True,
+                    result=result,
+                ),
+                sort_keys=True,
+            )
+        )
+    else:
+        print("batch dry-run summary")
+        print(f"- input_dir: {result['input_dir']}")
+        print(f"- output_dir: {result['output_dir']}")
+        print(f"- recursive: {result['recursive']}")
+        print(f"- palette: {result['palette']}")
+        print(f"- images_detected: {result['summary']['images_detected']}")
+
+        if plan:
+            print("planned commands:")
+            for step in plan:
+                print(step["command"])
+
+    return 0
+
+
 def _run_doctor_command(argv: list[str], request_id: str) -> int:
     arguments = parse_doctor_arguments(argv)
 
@@ -344,6 +454,9 @@ def main(argv: Union[list[str], None] = None):
 
     if normalized_argv and normalized_argv[0] == "tui":
         return _run_tui_command(argv, request_id)
+
+    if normalized_argv and normalized_argv[0] == "batch":
+        return _run_batch_command(argv, request_id)
 
     if normalized_argv and normalized_argv[0] == "doctor":
         return _run_doctor_command(argv, request_id)
