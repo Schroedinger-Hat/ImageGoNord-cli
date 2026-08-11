@@ -115,6 +115,29 @@ Show palette details in JSON:
 python src/image_go_nord_client palette info nord --format=json
 ```
 
+### Terminal UI (TUI)
+
+Start interactive mode:
+
+```shell
+python src/image_go_nord_client tui
+```
+
+TUI status as JSON envelope:
+
+```shell
+python src/image_go_nord_client tui --format=json
+```
+
+The TUI command is powered by [Textual](https://textual.textualize.io/).
+If Textual is not installed, the command returns exit code `4` and a dependency error.
+
+Install Textual:
+
+```shell
+pip install textual
+```
+
 ### Contributing
 - Follow the contributor guidelines
 - Follow the code style / requirements
