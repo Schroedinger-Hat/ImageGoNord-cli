@@ -344,6 +344,42 @@ def launch_tui() -> Tuple[int, str]:
                 f"{color_lines}"
             )
 
+        def _build_swatch_text(self, hex_value: str):
+            from rich.text import Text
+
+            swatch = Text("  ")
+            swatch.stylize(f"on {hex_value}")
+            return swatch
+
+        def _read_hex_value(self, color_path: Path) -> str:
+            return color_path.read_text(encoding="utf-8").splitlines()[0].strip()
+
+        def _get_palette_preview_renderable(self, palette_name: str):
+            from rich.console import Group
+            from rich.table import Table
+            from rich.text import Text
+
+            selected_palette = search_palette_by_name(palette_name)
+            if selected_palette is None:
+                return "Palette details unavailable"
+
+            colors = sorted(selected_palette.colors, key=lambda color: color.name.lower())
+
+            summary = Text()
+            summary.append(f"Palette: {selected_palette.name}\n", style="bold cyan")
+            summary.append(f"Colors: {len(colors)}", style="bold white")
+
+            table = Table.grid(padding=(0, 1))
+            table.add_column("Swatch", width=8)
+            table.add_column("Name", style="white")
+            table.add_column("Hex", style="bright_black")
+
+            for color in colors:
+                hex_value = self._read_hex_value(color.path)
+                table.add_row(self._build_swatch_text(hex_value), color.name, hex_value)
+
+            return Group(summary, Text(""), table)
+
         def _write_status(self, message: str, *, is_error: bool = False) -> None:
             status_widget = self.query_one("#status", Static)
             prefix = "Error" if is_error else "Status"
@@ -355,7 +391,7 @@ def launch_tui() -> Tuple[int, str]:
 
         def _refresh_palette_preview(self) -> None:
             palette_name = self._selected_palette_name()
-            preview = self._get_palette_preview_text(palette_name)
+            preview = self._get_palette_preview_renderable(palette_name)
             self.query_one("#palette-preview", Static).update(preview)
 
         def _cycle_palette(self, offset: int) -> None:
