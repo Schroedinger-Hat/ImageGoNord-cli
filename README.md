@@ -89,6 +89,32 @@ Validation error JSON output example:
 - `4`: dependency or environment failure
 - `5`: internal unexpected failure (reserved)
 
+### Palette Commands
+
+List installed palettes:
+
+```shell
+python src/image_go_nord_client palette list
+```
+
+List installed palettes in JSON:
+
+```shell
+python src/image_go_nord_client palette --format=json list
+```
+
+Show details for a specific palette:
+
+```shell
+python src/image_go_nord_client palette info nord
+```
+
+Show palette details in JSON:
+
+```shell
+python src/image_go_nord_client palette info nord --format=json
+```
+
 ### Contributing
 - Follow the contributor guidelines
 - Follow the code style / requirements
