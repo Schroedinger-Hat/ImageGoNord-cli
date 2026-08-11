@@ -10,6 +10,7 @@
 - Completed: preserved recursive output folder mapping for batch conversions.
 - In progress: beautiful terminal output improvements (Rich tables for palette and batch text summaries).
 - In progress: apply progress indicators in batch text mode.
+- In progress: structured doctor checks report in text mode.
 - Next: richer terminal presentation (tables/progress/spinners), watch mode, analyze/benchmark/compare commands.
 
 ## Vision

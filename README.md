@@ -216,6 +216,8 @@ Doctor currently validates:
 - Palette inventory availability
 - Textual dependency availability (optional)
 
+Doctor text output now includes a compact summary and a structured checks report.
+
 ### Batch Dry-Run
 
 Generate a batch conversion plan from a directory:
