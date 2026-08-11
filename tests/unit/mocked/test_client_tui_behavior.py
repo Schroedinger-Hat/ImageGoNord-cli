@@ -1,4 +1,6 @@
 import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from image_go_nord_client.main import main
@@ -77,6 +79,30 @@ class ClientShould(UnitTestBaseClass):
         self.assertTrue(payload["ok"])
         self.assertEqual("convert-image", payload["result"]["action"])
         self.assertIn("Converted image saved", payload["result"]["message"])
+
+    def test_run_tui_action_batch_conversion_in_json_mode(self):
+        with TemporaryDirectory() as tmpdir:
+            input_dir = Path(tmpdir) / "images"
+            input_dir.mkdir(parents=True)
+            (input_dir / "wall.png").write_bytes(b"img")
+
+            result = main(
+                argv=[
+                    "image-go-nord-client",
+                    "tui",
+                    "--action=batch-conversion",
+                    f"--img={input_dir}",
+                    "--format=json",
+                ]
+            )
+
+        payload = json.loads(self.mocked_stdout.getvalue().strip())
+        self.assertEqual(0, result)
+        self.assertTrue(payload["ok"])
+        self.assertEqual("batch-conversion", payload["result"]["action"])
+        self.assertEqual("tui-action", payload["result"]["mode"])
+        self.assertTrue(payload["result"]["dry_run"])
+        self.assertEqual(1, payload["result"]["summary"]["images_detected"])
 
     def test_fail_tui_action_with_validation_error_payload(self):
         with patch(

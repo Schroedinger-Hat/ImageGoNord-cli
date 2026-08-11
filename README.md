@@ -196,7 +196,7 @@ Available actions:
 
 - `convert-image`
 - `browse-palettes`
-- `batch-conversion`
+- `batch-conversion` (dry-run planner)
 
 Convert action options:
 
@@ -206,6 +206,17 @@ Convert action options:
 - `--colors`
 - `--blur`
 - `--no-avg`
+
+Batch-conversion action options:
+
+- `--img` (required, input directory)
+- `--out` (optional output directory; defaults to input directory)
+- `--palette`
+- `--colors`
+- `--blur`
+- `--no-avg`
+
+Batch-conversion action returns a dry-run plan only. It does not convert files.
 
 The TUI command is powered by [Textual](https://textual.textualize.io/) and supports:
 

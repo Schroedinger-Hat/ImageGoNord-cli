@@ -8,7 +8,7 @@ try:
 except ModuleNotFoundError:
     GoNord = None
 
-from image_go_nord_client import get_palette_list, search_palette_by_name
+from image_go_nord_client import OUTPUT_IMAGE_NAME, get_palette_list, search_palette_by_name
 
 TUI_ACTIONS = {
     "convert-image": {
@@ -20,10 +20,12 @@ TUI_ACTIONS = {
         "label": "Browse Palettes",
     },
     "batch-conversion": {
-        "description": "Batch conversion flow (coming soon)",
-        "label": "Batch Conversion (coming soon)",
+        "description": "Build a dry-run batch conversion plan",
+        "label": "Batch Conversion",
     },
 }
+
+SUPPORTED_IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"}
 
 
 def _parse_colors(colors: list[str]) -> list[str]:
@@ -117,6 +119,94 @@ def convert_image_from_tui(
     )
 
 
+def plan_batch_from_tui(
+    *,
+    colors: list[str],
+    disable_avg_pixels: bool,
+    enable_blur: bool,
+    input_dir_path: str,
+    output_dir_path: str,
+    palette: str,
+) -> Tuple[int, Dict[str, Any]]:
+    if not input_dir_path:
+        return (
+            2,
+            {"message": "batch-conversion action requires --img=<input_directory>"},
+        )
+
+    input_dir = Path(input_dir_path).expanduser().resolve()
+    if not input_dir.exists() or not input_dir.is_dir():
+        return (2, {"message": f"Input directory does not exist: {input_dir}"})
+
+    if output_dir_path == OUTPUT_IMAGE_NAME:
+        output_dir = input_dir
+    else:
+        output_dir = Path(output_dir_path).expanduser().resolve()
+
+    if output_dir.suffix:
+        return (
+            2,
+            {
+                "message": (
+                    "batch-conversion --out expects a directory path. "
+                    f"Received file-like path: {output_dir}"
+                )
+            },
+        )
+
+    image_files = sorted(
+        [
+            path
+            for path in input_dir.glob("*")
+            if path.is_file() and path.suffix.lower() in SUPPORTED_IMAGE_EXTENSIONS
+        ]
+    )
+
+    requested_colors = _parse_colors(colors)
+    plan = []
+    for image_file in image_files:
+        out_path = output_dir / f"{image_file.stem}-nord{image_file.suffix}"
+        command_parts = [
+            "image-go-nord-client",
+            f"--img={image_file}",
+            f"--out={out_path}",
+            f"--palette={palette}",
+        ]
+        if requested_colors:
+            command_parts.append(f"--colors={','.join(requested_colors)}")
+        if enable_blur:
+            command_parts.append("--blur")
+        if disable_avg_pixels:
+            command_parts.append("--no-avg")
+
+        plan.append(
+            {
+                "input": str(image_file),
+                "output": str(out_path),
+                "command": " ".join(command_parts),
+            }
+        )
+
+    return (
+        0,
+        {
+            "message": f"Batch dry-run plan generated for {len(plan)} image(s)",
+            "dry_run": True,
+            "input_dir": str(input_dir),
+            "output_dir": str(output_dir),
+            "palette": palette,
+            "colors": requested_colors,
+            "enable_blur": enable_blur,
+            "disable_avg_pixels": disable_avg_pixels,
+            "summary": {
+                "images_detected": len(image_files),
+                "planned_conversions": len(plan),
+            },
+            "plan": plan,
+        },
+    )
+
+
 def run_tui_action(
     action: str,
     *,
@@ -164,11 +254,13 @@ def run_tui_action(
             },
         )
 
-    return (
-        0,
-        {
-            "message": "Batch conversion flow is not implemented yet.",
-        },
+    return plan_batch_from_tui(
+        colors=colors,
+        disable_avg_pixels=disable_avg_pixels,
+        enable_blur=enable_blur,
+        input_dir_path=input_path or "",
+        output_dir_path=output_path,
+        palette=palette,
     )
 
 

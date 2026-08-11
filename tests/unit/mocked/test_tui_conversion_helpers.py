@@ -4,7 +4,7 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from image_go_nord_client import Color, Palette
-from image_go_nord_client.tui import convert_image_from_tui
+from image_go_nord_client.tui import convert_image_from_tui, run_tui_action
 
 
 class TuiConversionHelperShould(TestCase):
@@ -79,3 +79,64 @@ class TuiConversionHelperShould(TestCase):
         gn_instance.add_file_to_palette.assert_called_once_with("Aurora.txt")
         gn_instance.open_image.assert_called_once_with(str(input_path))
         gn_instance.convert_image.assert_called_once()
+
+    def test_run_tui_action_batch_conversion_returns_plan(self):
+        with TemporaryDirectory() as tmpdir:
+            input_dir = Path(tmpdir) / "images"
+            input_dir.mkdir(parents=True)
+            (input_dir / "wall.png").write_bytes(b"img")
+            (input_dir / "logo.jpg").write_bytes(b"img")
+            (input_dir / "ignore.txt").write_text("skip", encoding="utf-8")
+
+            output_dir = Path(tmpdir) / "out"
+            status, payload = run_tui_action(
+                "batch-conversion",
+                colors=["Aurora", "Frost"],
+                disable_avg_pixels=True,
+                enable_blur=True,
+                input_path=str(input_dir),
+                output_path=str(output_dir),
+                palette="nord",
+            )
+
+        self.assertEqual(0, status)
+        self.assertTrue(payload["dry_run"])
+        self.assertEqual(2, payload["summary"]["images_detected"])
+        self.assertEqual(2, payload["summary"]["planned_conversions"])
+        self.assertEqual(["Aurora", "Frost"], payload["colors"])
+        self.assertEqual("nord", payload["palette"])
+        self.assertEqual(2, len(payload["plan"]))
+        self.assertIn("Batch dry-run plan generated", payload["message"])
+
+    def test_run_tui_action_batch_conversion_requires_input_directory(self):
+        status, payload = run_tui_action(
+            "batch-conversion",
+            colors=[],
+            disable_avg_pixels=False,
+            enable_blur=False,
+            input_path=None,
+            output_path="nord.png",
+            palette="nord",
+        )
+
+        self.assertEqual(2, status)
+        self.assertIn("requires --img=<input_directory>", payload["message"])
+
+    def test_run_tui_action_batch_conversion_rejects_file_like_out_path(self):
+        with TemporaryDirectory() as tmpdir:
+            input_dir = Path(tmpdir) / "images"
+            input_dir.mkdir(parents=True)
+            (input_dir / "wall.png").write_bytes(b"img")
+
+            status, payload = run_tui_action(
+                "batch-conversion",
+                colors=[],
+                disable_avg_pixels=False,
+                enable_blur=False,
+                input_path=str(input_dir),
+                output_path=str(Path(tmpdir) / "out.png"),
+                palette="nord",
+            )
+
+        self.assertEqual(2, status)
+        self.assertIn("expects a directory path", payload["message"])
