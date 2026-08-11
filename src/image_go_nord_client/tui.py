@@ -351,6 +351,16 @@ def launch_tui() -> Tuple[int, str]:
             swatch.stylize(f"on {hex_value}")
             return swatch
 
+        def _build_palette_band(self, hex_values: list[str]):
+            from rich.text import Text
+
+            band = Text()
+            for hex_value in hex_values:
+                segment = Text("        ")
+                segment.stylize(f"on {hex_value}")
+                band.append(segment)
+            return band
+
         def _read_hex_value(self, color_path: Path) -> str:
             return color_path.read_text(encoding="utf-8").splitlines()[0].strip()
 
@@ -369,16 +379,20 @@ def launch_tui() -> Tuple[int, str]:
             summary.append(f"Palette: {selected_palette.name}\n", style="bold cyan")
             summary.append(f"Colors: {len(colors)}", style="bold white")
 
+            hex_values = [self._read_hex_value(color.path) for color in colors]
+            band = self._build_palette_band(hex_values)
+
+            band_caption = Text(" ".join(hex_values), style="bright_black")
+
             table = Table.grid(padding=(0, 1))
             table.add_column("Swatch", width=8)
             table.add_column("Name", style="white")
             table.add_column("Hex", style="bright_black")
 
-            for color in colors:
-                hex_value = self._read_hex_value(color.path)
+            for color, hex_value in zip(colors, hex_values):
                 table.add_row(self._build_swatch_text(hex_value), color.name, hex_value)
 
-            return Group(summary, Text(""), table)
+            return Group(summary, Text(""), band, band_caption, Text(""), table)
 
         def _write_status(self, message: str, *, is_error: bool = False) -> None:
             status_widget = self.query_one("#status", Static)
