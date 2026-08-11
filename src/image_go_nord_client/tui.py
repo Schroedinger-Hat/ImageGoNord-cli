@@ -377,6 +377,24 @@ def launch_tui() -> Tuple[int, str]:
             normalized = value.strip().lower()
             return normalized or self._default_palette_name()
 
+        def _resolve_palette_input(self, value: str) -> tuple[str | None, list[str]]:
+            normalized = value.strip().lower()
+            if not normalized:
+                return self._default_palette_name(), []
+
+            if normalized in self._palette_names:
+                return normalized, []
+
+            prefix_matches = [
+                palette_name
+                for palette_name in self._palette_names
+                if palette_name.startswith(normalized)
+            ]
+            if len(prefix_matches) == 1:
+                return prefix_matches[0], []
+
+            return None, prefix_matches
+
         def _set_palette_name(self, palette_name: str) -> None:
             self.query_one("#palette-input", Input).value = palette_name
 
@@ -656,16 +674,32 @@ def launch_tui() -> Tuple[int, str]:
             if event.input.id != "palette-input":
                 return
 
-            palette_name = self._selected_palette_name()
-            self._set_palette_name(palette_name)
+            resolved_name, matches = self._resolve_palette_input(event.value)
+            if resolved_name is None:
+                self._refresh_palette_preview()
+                if matches:
+                    options = ", ".join(matches[:6])
+                    suffix = "..." if len(matches) > 6 else ""
+                    self._write_status(
+                        f"Ambiguous palette prefix. Matches: {options}{suffix}",
+                        is_error=True,
+                    )
+                else:
+                    self._write_status(
+                        f"Unknown palette: {event.value.strip().lower()}. Press p for available palettes.",
+                        is_error=True,
+                    )
+                return
+
+            self._set_palette_name(resolved_name)
             self._refresh_palette_preview()
-            if search_palette_by_name(palette_name) is None:
+            if resolved_name != event.value.strip().lower():
                 self._write_status(
-                    f"Unknown palette: {palette_name}. Press p for available palettes.",
-                    is_error=True,
+                    f"Palette auto-completed to: {resolved_name}"
                 )
                 return
-            self._write_status(f"Palette selected: {palette_name}")
+
+            self._write_status(f"Palette selected: {resolved_name}")
 
         def on_input_changed(self, event: Input.Changed) -> None:
             if event.input.id != "palette-input":

@@ -209,8 +209,8 @@ Convert action options:
 
 The TUI command is powered by [Textual](https://textual.textualize.io/) and supports:
 
-- selecting a palette from an interactive dropdown
-- changing the palette with previous/next controls or by typing the palette name directly
+- selecting a palette with previous/next controls or by typing the palette name
+- palette prefix auto-complete and ambiguity hints when typing
 - optional color filtering, blur, and no-avg flags
 - direct image conversion from the terminal UI
 - palette browsing from the same screen
