@@ -302,6 +302,7 @@ def launch_tui() -> Tuple[int, str]:
                 [palette.name for palette in get_palette_list()]
             )
             self._studio_mode = True
+            self._manual_mode_override = False
             self._hero_banner = dedent(
                 r"""
                   ___                                 _____       _   _               _
@@ -324,6 +325,14 @@ def launch_tui() -> Tuple[int, str]:
 
         def _mode_label(self) -> str:
             return "studio" if self._studio_mode else "simple"
+
+        def _should_use_simple_mode(self) -> bool:
+            return self.size.width < 140
+
+        def _set_mode(self, studio_mode: bool, *, manual: bool) -> None:
+            self._studio_mode = studio_mode
+            self._manual_mode_override = manual
+            self._apply_layout_mode()
 
         def _apply_layout_mode(self) -> None:
             left_panel = self.query_one("#left-panel", Vertical)
@@ -519,8 +528,7 @@ def launch_tui() -> Tuple[int, str]:
             self._run_conversion()
 
         def action_toggle_mode(self) -> None:
-            self._studio_mode = not self._studio_mode
-            self._apply_layout_mode()
+            self._set_mode(not self._studio_mode, manual=True)
             self._write_status(f"Switched to {self._mode_label()} mode")
 
         def action_previous_palette(self) -> None:
@@ -593,10 +601,16 @@ def launch_tui() -> Tuple[int, str]:
             yield Footer()
 
         def on_mount(self) -> None:
-            self._apply_layout_mode()
+            self._set_mode(not self._should_use_simple_mode(), manual=False)
             self._refresh_palette_preview()
             self._update_last_conversion()
             self._write_status("Ready")
+
+        def on_resize(self) -> None:
+            if self._manual_mode_override:
+                return
+
+            self._set_mode(not self._should_use_simple_mode(), manual=False)
 
         def on_input_submitted(self, event: Input.Submitted) -> None:
             if event.input.id != "palette-input":
