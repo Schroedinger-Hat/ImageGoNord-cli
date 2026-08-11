@@ -13,7 +13,16 @@ class ClientShould(UnitTestBaseClass):
 
         self.assertEqual(0, result)
         self.assertIn("doctor checks passed", self.mocked_stdout.getvalue())
-        self.assertIn("image_go_nord: pass", self.mocked_stdout.getvalue())
+        self.assertIn("summary:", self.mocked_stdout.getvalue())
+        self.assertIn("image_go_nord", self.mocked_stdout.getvalue())
+        self.mocked_go_nord.assert_not_called()
+
+    def test_use_doctor_renderer_helper_in_text_mode(self):
+        with patch("image_go_nord_client.main._print_doctor_report") as mocked_renderer:
+            result = main(argv=["image-go-nord-client", "doctor"])
+
+        self.assertEqual(0, result)
+        mocked_renderer.assert_called_once()
         self.mocked_go_nord.assert_not_called()
 
     def test_return_json_output_when_doctor_passes(self):

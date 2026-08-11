@@ -331,6 +331,51 @@ def _print_batch_apply_progress_step(
         console.print(f"[red][{index}/{total}] failed[/red] {short_name}: {error}")
 
 
+def _print_doctor_report(*, checks: list[dict], summary: dict, ok: bool) -> None:
+    status_line = "doctor checks passed" if ok else "doctor checks failed"
+    if not _is_rich_available():
+        print(status_line)
+        print(
+            "summary: "
+            f"passed={summary['passed']} "
+            f"warnings={summary['warnings']} "
+            f"failed={summary['failed']}"
+        )
+        for check in checks:
+            print(f"- {check['name']}: {check['status']} ({check['message']})")
+        return
+
+    from rich.console import Console
+    from rich.table import Table
+
+    console = Console()
+    console.print(f"[bold]{status_line}[/bold]")
+    console.print(
+        "summary: "
+        f"passed={summary['passed']} "
+        f"warnings={summary['warnings']} "
+        f"failed={summary['failed']}"
+    )
+
+    table = Table(title="Doctor Checks")
+    table.add_column("Check", style="cyan")
+    table.add_column("Status")
+    table.add_column("Message", style="white")
+    table.add_column("Hint", style="dim")
+
+    for check in checks:
+        if check["status"] == "pass":
+            status_text = "[green]pass[/green]"
+        elif check["status"] == "warn":
+            status_text = "[yellow]warn[/yellow]"
+        else:
+            status_text = "[red]fail[/red]"
+
+        table.add_row(check["name"], status_text, check["message"], check["hint"])
+
+    console.print(table)
+
+
 def _is_supported_image_file(path: Path) -> bool:
     return path.suffix.lower() in {
         ".png",
@@ -662,9 +707,7 @@ def _run_doctor_command(argv: list[str], request_id: str) -> int:
                 )
             )
         else:
-            print("doctor checks failed")
-            for check in checks:
-                print(f"- {check['name']}: {check['status']} ({check['message']})")
+            _print_doctor_report(checks=checks, summary=summary, ok=False)
 
         return status
 
@@ -680,9 +723,7 @@ def _run_doctor_command(argv: list[str], request_id: str) -> int:
             )
         )
     else:
-        print("doctor checks passed")
-        for check in checks:
-            print(f"- {check['name']}: {check['status']} ({check['message']})")
+        _print_doctor_report(checks=checks, summary=summary, ok=True)
 
     return 0
 
