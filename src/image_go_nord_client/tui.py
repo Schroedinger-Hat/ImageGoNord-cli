@@ -291,6 +291,7 @@ def launch_tui() -> Tuple[int, str]:
             ("c", "convert", "Convert"),
             ("r", "reset_form", "Reset"),
             ("p", "show_palettes", "Palettes"),
+            ("m", "toggle_mode", "Mode"),
             ("[", "previous_palette", "Prev Palette"),
             ("]", "next_palette", "Next Palette"),
         ]
@@ -300,6 +301,7 @@ def launch_tui() -> Tuple[int, str]:
             self._palette_names = sorted(
                 [palette.name for palette in get_palette_list()]
             )
+            self._studio_mode = True
             self._hero_banner = dedent(
                 r"""
                   ___                                 _____       _   _               _
@@ -319,6 +321,31 @@ def launch_tui() -> Tuple[int, str]:
             if self._palette_names:
                 return self._palette_names[0]
             return "nord"
+
+        def _mode_label(self) -> str:
+            return "studio" if self._studio_mode else "simple"
+
+        def _apply_layout_mode(self) -> None:
+            left_panel = self.query_one("#left-panel", Vertical)
+            right_panel = self.query_one("#right-panel", Vertical)
+            mode_button = self.query_one("#mode-button", Button)
+            hint = self.query_one("#shortcut-hint", Static)
+
+            if self._studio_mode:
+                right_panel.display = True
+                left_panel.styles.width = "2fr"
+                right_panel.styles.width = "3fr"
+                mode_button.label = "Simple"
+                hint.update(
+                    "Shortcuts: m mode | [ prev | ] next | c convert | r reset | p palettes | q quit"
+                )
+            else:
+                right_panel.display = False
+                left_panel.styles.width = "1fr"
+                mode_button.label = "Studio"
+                hint.update(
+                    "Shortcuts: m mode | [ prev | ] next | c convert | r reset | p palettes | q quit"
+                )
 
         def _normalize_palette_name(self, value: str) -> str:
             normalized = value.strip().lower()
@@ -491,6 +518,11 @@ def launch_tui() -> Tuple[int, str]:
         def action_convert(self) -> None:
             self._run_conversion()
 
+        def action_toggle_mode(self) -> None:
+            self._studio_mode = not self._studio_mode
+            self._apply_layout_mode()
+            self._write_status(f"Switched to {self._mode_label()} mode")
+
         def action_previous_palette(self) -> None:
             self._cycle_palette(-1)
 
@@ -542,6 +574,7 @@ def launch_tui() -> Tuple[int, str]:
                     with Horizontal(id="action-row"):
                         yield Button("Convert", id="convert-button", variant="primary")
                         yield Button("Reset", id="reset-button")
+                        yield Button("Simple", id="mode-button")
                         yield Button("Palettes", id="palettes-button")
                     yield Static("Status: Ready", id="status")
 
@@ -553,12 +586,14 @@ def launch_tui() -> Tuple[int, str]:
                     yield Static("Activity", classes="title")
                     yield RichLog(id="log", wrap=True, highlight=True, markup=True)
                     yield Static(
-                        "Shortcuts: [ prev | ] next | c convert | r reset | p palettes | q quit",
+                        "Shortcuts: m mode | [ prev | ] next | c convert | r reset | p palettes | q quit",
+                        id="shortcut-hint",
                         classes="hint",
                     )
             yield Footer()
 
         def on_mount(self) -> None:
+            self._apply_layout_mode()
             self._refresh_palette_preview()
             self._update_last_conversion()
             self._write_status("Ready")
@@ -584,6 +619,10 @@ def launch_tui() -> Tuple[int, str]:
             self._refresh_palette_preview()
 
         def on_button_pressed(self, event: Button.Pressed) -> None:
+            if event.button.id == "mode-button":
+                self.action_toggle_mode()
+                return
+
             if event.button.id == "prev-palette-button":
                 self.action_previous_palette()
                 return
