@@ -208,6 +208,9 @@ python src/image_go_nord_client batch ./images --out-dir ./converted --palette m
 
 Current `batch` behavior is a dry-run planner only. It does not convert files yet.
 
+When scanning recursively, output paths preserve the input directory structure.
+For example `images/a/b/wall.png` becomes `converted/a/b/wall-nord.png` when using `--out-dir ./converted`.
+
 Execute conversion for the detected files:
 
 ```shell

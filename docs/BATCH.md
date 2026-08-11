@@ -58,6 +58,12 @@ python src/image_go_nord_client batch ./images --recursive --apply --palette mon
 - Validates input directory, palette, and selected colors
 - Generates command previews for each detected image
 - Reports per-file conversion results in JSON mode when executing
+- Preserves relative input subfolders in output paths
+
+Example path mapping with `--recursive --out-dir ./converted`:
+
+- input: `./images/a/b/wall.png`
+- output: `./converted/a/b/wall-nord.png`
 
 ## Exit Codes
 
