@@ -135,11 +135,26 @@ Run a TUI action without opening the full-screen interface:
 python src/image_go_nord_client tui --action=browse-palettes --format=json
 ```
 
+Generate a convert command from TUI action options:
+
+```shell
+python src/image_go_nord_client tui --action=convert-image --img=wall.png --out=wall-nord.png --palette=nord --colors=Aurora,Frost --blur
+```
+
 Available actions:
 
 - `convert-image`
 - `browse-palettes`
 - `batch-conversion`
+
+Convert action options:
+
+- `--img` (required)
+- `--out`
+- `--palette`
+- `--colors`
+- `--blur`
+- `--no-avg`
 
 The TUI command is powered by [Textual](https://textual.textualize.io/).
 If Textual is not installed, the command returns exit code `4` and a dependency error.
