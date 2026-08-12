@@ -110,6 +110,245 @@ def get_default_palette() -> Palette:
     )
 
 
+def normalize_argv(argv: list[str]) -> list[str]:
+    normalized_argv = argv.copy()
+
+    if normalized_argv and not normalized_argv[0].startswith("-"):
+        normalized_argv = normalized_argv[1:]
+
+    if normalized_argv and normalized_argv[0] == "convert":
+        normalized_argv = normalized_argv[1:]
+
+    return normalized_argv
+
+
+def parse_arguments(argv: list[str]) -> tuple[argparse.Namespace, list[str]]:
+    parser = get_argument_parser()
+    return parser.parse_known_args(normalize_argv(argv))
+
+
+def parse_palette_arguments(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Palette management commands",
+        add_help=True,
+        prog="image-go-nord-client palette",
+    )
+
+    parser.add_argument(
+        "--format",
+        type=str,
+        dest="output_format",
+        choices=["text", "json"],
+        default="text",
+        help="specify output format",
+    )
+
+    subparsers = parser.add_subparsers(dest="palette_action", required=True)
+
+    list_parser = subparsers.add_parser("list", help="list available palettes")
+    list_parser.add_argument(
+        "--format",
+        type=str,
+        dest="sub_output_format",
+        choices=["text", "json"],
+        default=None,
+        help="specify output format",
+    )
+
+    info_parser = subparsers.add_parser("info", help="show palette details")
+    info_parser.add_argument(
+        "--format",
+        type=str,
+        dest="sub_output_format",
+        choices=["text", "json"],
+        default=None,
+        help="specify output format",
+    )
+    info_parser.add_argument("name", type=str, help="palette name")
+
+    arguments = parser.parse_args(normalize_argv(argv)[1:])
+    if arguments.sub_output_format is not None:
+        arguments.output_format = arguments.sub_output_format
+
+    return arguments
+
+
+def parse_tui_arguments(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Interactive terminal UI",
+        add_help=True,
+        prog="image-go-nord-client tui",
+    )
+
+    parser.add_argument(
+        "--format",
+        type=str,
+        dest="output_format",
+        choices=["text", "json"],
+        default="text",
+        help="specify output format",
+    )
+
+    parser.add_argument(
+        "--action",
+        type=str,
+        dest="action",
+        choices=["convert-image", "browse-palettes", "batch-conversion"],
+        default=None,
+        help="run a TUI action without launching the interactive app",
+    )
+
+    parser.add_argument(
+        "--img",
+        type=str,
+        dest="input_path",
+        default=None,
+        help="input image path for convert-image action",
+    )
+
+    parser.add_argument(
+        "--out",
+        type=str,
+        dest="output_path",
+        default=OUTPUT_IMAGE_NAME,
+        help="output image path for convert-image action",
+    )
+
+    parser.add_argument(
+        "--palette",
+        type=str,
+        dest="palette",
+        default="nord",
+        help="palette for convert-image action",
+    )
+
+    parser.add_argument(
+        "--colors",
+        type=lambda value: list(value.split(",")),
+        dest="colors",
+        default=[],
+        help="comma-separated colors for convert-image action",
+    )
+
+    parser.add_argument(
+        "--blur",
+        action="store_true",
+        dest="enable_blur",
+        default=False,
+        help="enable blur for convert-image action",
+    )
+
+    parser.add_argument(
+        "--no-avg",
+        action="store_true",
+        dest="disable_avg_pixels",
+        default=False,
+        help="disable avg optimization for convert-image action",
+    )
+
+    return parser.parse_args(normalize_argv(argv)[1:])
+
+
+def parse_doctor_arguments(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Environment diagnostics",
+        add_help=True,
+        prog="image-go-nord-client doctor",
+    )
+
+    parser.add_argument(
+        "--format",
+        type=str,
+        dest="output_format",
+        choices=["text", "json"],
+        default="text",
+        help="specify output format",
+    )
+
+    return parser.parse_args(normalize_argv(argv)[1:])
+
+
+def parse_batch_arguments(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Batch conversion (dry-run)",
+        add_help=True,
+        prog="image-go-nord-client batch",
+    )
+
+    parser.add_argument(
+        "input_dir",
+        type=str,
+        help="input directory with images to convert",
+    )
+
+    parser.add_argument(
+        "--recursive",
+        action="store_true",
+        dest="recursive",
+        default=False,
+        help="scan input directory recursively",
+    )
+
+    parser.add_argument(
+        "--apply",
+        action="store_true",
+        dest="apply",
+        default=False,
+        help="execute conversions instead of only printing a dry-run plan",
+    )
+
+    parser.add_argument(
+        "--palette",
+        type=str,
+        dest="palette",
+        default="nord",
+        help="palette to use in generated convert commands",
+    )
+
+    parser.add_argument(
+        "--colors",
+        type=lambda value: list(value.split(",")),
+        dest="colors",
+        default=[],
+        help="comma-separated colors to use for conversion",
+    )
+
+    parser.add_argument(
+        "--blur",
+        action="store_true",
+        dest="enable_blur",
+        default=False,
+        help="enable blur for conversion",
+    )
+
+    parser.add_argument(
+        "--no-avg",
+        action="store_true",
+        dest="disable_avg_pixels",
+        default=False,
+        help="disable average pixel optimization for conversion",
+    )
+
+    parser.add_argument(
+        "--out-dir",
+        type=str,
+        dest="output_dir",
+        default=None,
+        help="output directory for generated convert commands",
+    )
+
+    parser.add_argument(
+        "--format",
+        type=str,
+        dest="output_format",
+        choices=["text", "json"],
+        default="text",
+        help="specify output format",
+    )
+
+    return parser.parse_args(normalize_argv(argv)[1:])
+
+
 def get_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=__doc__,
@@ -152,6 +391,15 @@ def get_argument_parser() -> argparse.ArgumentParser:
         dest="quiet_mode",
         default=False,
         help="quiet (no output)",
+    )
+
+    parser.add_argument(
+        "--format",
+        type=str,
+        dest="output_format",
+        choices=["text", "json"],
+        default="text",
+        help="specify output format",
     )
 
     parser.add_argument(

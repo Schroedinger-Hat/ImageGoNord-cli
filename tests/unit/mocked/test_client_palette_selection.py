@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from unittest.mock import ANY, call
 
@@ -116,7 +117,7 @@ class ClientShould(UnitTestBaseClass):
             ANY, save_path="file_output.png"
         )
 
-    def test_exit_with_1_if_palette_not_found(
+    def test_exit_with_2_if_palette_not_found(
         self,
     ):
         result = main(
@@ -134,4 +135,24 @@ class ClientShould(UnitTestBaseClass):
         self.mock_gn_instance.add_file_to_palette.assert_not_called()
         self.mock_gn_instance.convert_image.assert_not_called()
 
-        self.assertEqual(result, 1)
+        self.assertEqual(result, 2)
+
+    def test_json_output_when_color_is_not_found_for_palette(self):
+        result = main(
+            [
+                "image-go-nort",
+                "-i=file_1.png",
+                "-o=file_output.png",
+                "--palette=nord",
+                "--colors=NOT_FOUND",
+                "--format=json",
+            ]
+        )
+
+        payload = json.loads(self.mocked_stdout.getvalue().strip())
+        self.assertEqual(2, result)
+        self.assertFalse(payload["ok"])
+        self.assertRegex(payload["request_id"], r"^[0-9a-f-]{36}$")
+        self.assertEqual("3.0", payload["contract_version"])
+        self.assertEqual("E_VALIDATION", payload["error"]["code"])
+        self.assertIn("possible colors", payload["error"]["message"])
