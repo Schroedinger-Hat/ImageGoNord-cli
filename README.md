@@ -6,6 +6,16 @@ You can find more information here: [ImageGoNord](https://github.com/schroedinge
 
 This repository is a client, written in python, that can convert any sort of image into a nordtheme palette image.
 
+## Demo
+
+### CLI
+
+![CLI demo](docs/demo/cli-demo.gif)
+
+### TUI (interactive mode)
+
+![TUI demo](docs/demo/tui-demo.gif)
+
 ## Getting Started
 Include any essential instructions for:
 

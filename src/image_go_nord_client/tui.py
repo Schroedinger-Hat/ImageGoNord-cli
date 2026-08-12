@@ -267,6 +267,7 @@ def run_tui_action(
 def launch_tui() -> Tuple[int, str]:
     try:
         from textual.app import App, ComposeResult
+        from textual.binding import Binding
         from textual.containers import Horizontal, Vertical
         from textual.widgets import (
             Button,
@@ -392,18 +393,20 @@ def launch_tui() -> Tuple[int, str]:
         TITLE = "ImageGoNord CLI"
         SUB_TITLE = "Studio TUI"
         BINDINGS = [
-            ("q", "quit", "Quit"),
-            ("h", "toggle_help", "Help"),
-            ("c", "convert", "Convert"),
+            # priority=True so these fire even when an Input widget has focus
+            Binding("q", "quit", "Quit", priority=True),
+            Binding("h", "toggle_help", "Help", priority=True),
+            Binding("c", "convert", "Convert", priority=True),
+            Binding("[", "previous_palette", "Prev Palette", priority=True),
+            Binding("]", "next_palette", "Next Palette", priority=True),
+            Binding("f", "refresh_input_files", "Refresh Inputs", priority=True),
+            # non-priority: letters that may appear in typed paths/values
             ("r", "reset_form", "Reset"),
             ("p", "show_palettes", "Palettes"),
             ("m", "toggle_mode", "Mode"),
-            ("f", "refresh_input_files", "Refresh Inputs"),
             ("v", "previous_input_file", "Prev Input"),
             ("n", "next_input_file", "Next Input"),
             ("d", "derive_output", "Derive Output"),
-            ("[", "previous_palette", "Prev Palette"),
-            ("]", "next_palette", "Next Palette"),
         ]
 
         def __init__(self) -> None:
@@ -860,6 +863,31 @@ def launch_tui() -> Tuple[int, str]:
                     )
             yield Static("", id="help-overlay")
             yield Footer()
+
+        def on_key(self, event) -> None:
+            """Intercept shortcut keys before Input widgets swallow them.
+
+            palette-input is excluded so users can still type palette names.
+            Escape blurs whichever Input field currently has focus.
+            """
+            focused = self.focused
+            focused_id = focused.id if focused is not None else None
+            # Escape on any input field → blur it
+            if event.key == "escape" and isinstance(focused, Input):
+                event.prevent_default()
+                self.set_focus(None)
+                return
+            if focused_id == "palette-input":
+                return
+            _shortcuts = {
+                "left_square_bracket": self.action_previous_palette,
+                "right_square_bracket": self.action_next_palette,
+                "c": self.action_convert,
+            }
+            action = _shortcuts.get(event.key)
+            if action is not None:
+                event.prevent_default()
+                action()
 
         def on_mount(self) -> None:
             self._set_mode(not self._should_use_simple_mode(), manual=False)
